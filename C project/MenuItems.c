@@ -48,6 +48,7 @@ __attribute__((section(".eeprom")))u8 ee_startprg = 2;
 //=========================== строки меню ===========================
 const u8 PROGMEM 
 	_Empty[]			= "                ",
+#ifdef _ENGLISH_VERSION_
 	_ViewInfo1[]		= "AutoWelding v1.0",
 	_InfoAuto[]			= "Auto (Pause    )",
 	_InfoSimple[]		= " Mode is Simple ",
@@ -85,11 +86,49 @@ const u8 PROGMEM
 	_Splash2[]			= "   auto welding!",
 	_Demo1[]			= " Demo version   ",
 	_Demo2[]			= "   Demo version ";
-
+#else
+	_ViewInfo1[]		= "АвтоСварка  v1.0",
+	_InfoAuto[]			= "Авто (Пауза    )",
+	_InfoSimple[]		= "Режим Одиночный ",
+	_ViewParams1[]		= "7 Н: 30 М:5 Т:3 ",
+	_ViewParams2[]		= "Сж:450*30 Пр:110",
+	_PrePressing[]		= "Предвар.Сж.   0 ",
+	_Pressing[]			= "Сжатие          ",
+	_Heating[]			= "Нагрев          ",
+	_Modulation[]		= "Модуляция       ",
+	_Forging[]			= "Проковка        ",
+	_Current[]			= "Ток             ",
+	_Editing[]			= "Редактирование: ",
+	_ChooseMenu[]		= "Выбор меню:     ",
+	_ProgramStngs[]		= "Настр. программ ",
+	_CommonStngs[]		= "Общие настройки ",
+	_ChooseParam[]		= "Выбор параметра ",
+	_Mode[]				= "Режим           ",
+	_Pause[]			= "Пауза           ",
+	_ParametrHas[]		= "  Параметр      ",
+	_BeenSaved[]		= "     сохранён!  ",
+	_ParametrHasNot[]	= "Параметр не был ",
+	_WeldingIs[]		= " Цикл сварки    ",
+	_Completed[]		= "     завершён!  ",
+	_StartPrg[]			= "Стартовая прг 01",
+	_PressingIs[]		= " Сжатие         ",
+	_HeatingIs[]		= " Нагрев         ",
+	_ForgingIs[]		= " Проковка       ",
+	_Auto[]				= "Автоматический",
+	_Simple[]			= "     Одиночный",
+	_Running[]			= "    в процессе! ",
+	_Ready[]			= "Готово! Нажмите ",
+	_ForWelding[]		= "педальдля сварки",
+	_Pause_[]			= "   Пауза        ",
+	_Splash1[]			= "Да прибудет с   ",
+	_Splash2[]			= "вами сила, друг!",
+	_Demo1[]			= " Демо версия    ",
+	_Demo2[]			= "   Демо версия  ";
+#endif
 
 
 //=========================== элементы меню =========================
-MenuItem
+const MenuItem
 	// Menu item					// menu id			// 1st string	// 2nd string	// menu's function
 	mInfo				PROGMEM = { idInfo,				_ViewInfo1,		_InfoSimple,	fInfo },
 	mPrograms			PROGMEM = { idPrograms,			_ViewParams1,	_ViewParams2,	fPrograms },

@@ -340,7 +340,7 @@ u8 DoWelding()
 						}
 						wdt_feed();
 					}
-				}				
+				}
 				doPause(); // пауза между циклами сварки
 			}
 			break;
