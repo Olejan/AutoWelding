@@ -46,7 +46,7 @@ __attribute__((section(".eeprom")))u8 ee_startprg = 2;
 //__attribute__((section(".eeprom")))u8 ee_mode = SIMPLE_MODE;
 //__attribute__((section(".eeprom")))u8 ee_pause = MAX_PAUSE;
 //=========================== строки меню ===========================
-const u8 PROGMEM 
+const u8 PROGMEM
 	_Empty[]			= "                ",
 #ifdef _ENGLISH_VERSION_
 	_ViewInfo1[]		= "AutoWelding v1.0",
