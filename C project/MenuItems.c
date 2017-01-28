@@ -48,8 +48,8 @@ __attribute__((section(".eeprom")))u8 ee_startprg = 2;
 //=========================== строки меню ===========================
 const u8 PROGMEM
 	_Empty[]			= "                ",
-#ifdef _ENGLISH_VERSION_
-	_ViewInfo1[]		= "AutoWelding v1.0",
+#ifndef _RUSSIAN_VERSION_
+	_ViewInfo1[]		= "AutoWelding v1.2",
 	_InfoAuto[]			= "Auto (Pause    )",
 	_InfoSimple[]		= " Mode is Simple ",
 	_ViewParams1[]		= "7 H: 30 M:5 I:3 ",
@@ -87,7 +87,7 @@ const u8 PROGMEM
 	_Demo1[]			= " Demo version   ",
 	_Demo2[]			= "   Demo version ";
 #else
-	_ViewInfo1[]		= "АвтоСварка  v1.0",
+	_ViewInfo1[]		= "АвтоСварка v1.2R",
 	_InfoAuto[]			= "Авто (Пауза    )",
 	_InfoSimple[]		= "Режим Одиночный ",
 	_ViewParams1[]		= "7 Н: 30 М:5 Т:3 ",
@@ -106,22 +106,22 @@ const u8 PROGMEM
 	_Mode[]				= "Режим           ",
 	_Pause[]			= "Пауза           ",
 	_ParametrHas[]		= "  Параметр      ",
-	_BeenSaved[]		= "     сохранён!  ",
+	_BeenSaved[]		= "     сохран$н!  ",
 	_ParametrHasNot[]	= "Параметр не был ",
 	_WeldingIs[]		= " Цикл сварки    ",
-	_Completed[]		= "     завершён!  ",
+	_Completed[]		= "     заверш$н!  ",
 	_StartPrg[]			= "Стартовая прг 01",
 	_PressingIs[]		= " Сжатие         ",
 	_HeatingIs[]		= " Нагрев         ",
 	_ForgingIs[]		= " Проковка       ",
-	_Auto[]				= "Автоматический",
-	_Simple[]			= "     Одиночный",
+	_Auto[]				= "  Автомат  ",
+	_Simple[]			= " Одиночный ",
 	_Running[]			= "    в процессе! ",
 	_Ready[]			= "Готово! Нажмите ",
 	_ForWelding[]		= "педальдля сварки",
 	_Pause_[]			= "   Пауза        ",
-	_Splash1[]			= "Да прибудет с   ",
-	_Splash2[]			= "вами сила, друг!",
+	_Splash1[]			= "Да будет ваш    ",
+	_Splash2[]			= "  шов крепким!!!",
 	_Demo1[]			= " Демо версия    ",
 	_Demo2[]			= "   Демо версия  ";
 #endif

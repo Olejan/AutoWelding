@@ -92,10 +92,10 @@ void UpdateLcdParam(u8 a_ParamsId, u8 a_nVal)
 			WrDec(a_nVal, 12, lcdstr2);
 			break;
 		case paramMode:
-#ifdef _ENGLISH_VERSION_
+#ifndef _RUSSIAN_VERSION_
 			lcd_gotoxy(6, lcdstr2);
 #else
-			lcd_gotoxy(1, lcdstr2);
+			lcd_gotoxy(5, lcdstr2);
 #endif
 			if (a_nVal == SIMPLE_MODE)
 				lcd_puts_p((const char *)_Simple);

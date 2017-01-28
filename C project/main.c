@@ -142,9 +142,9 @@ void init()
 #ifndef _DEBUG_
 	lcd_init(LCD_DISP_ON);
 	//init_lcd_simbols();
-#ifdef _DEMO_VERSION_
+//#ifdef _DEMO_VERSION_
 	SplashScreen();
-#endif // _DEMO_VERSION_
+//#endif // _DEMO_VERSION_
 #endif // _DEBUG_
 	SetMenu(&mPrograms);
 }

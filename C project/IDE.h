@@ -10,9 +10,6 @@
 #include "InlineFunctions.h"
 
 
-//#define _ENGLISH_VERSION_
-
-
 #ifdef WDT_ENABLE
 extern void SetWdtTimeLabel();
 extern void ResetWdtTimeLabel();

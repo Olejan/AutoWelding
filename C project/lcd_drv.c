@@ -26,6 +26,82 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include "lcd_drv.h"
+#include "typedef.h"
+
+
+
+const char GetAdaptedChar(char c)
+{
+	//if (c < 'А') return c;
+	if (c == 'А') return 'A';
+	else if (c == 'Б') return _B;
+	else if (c == 'В') return 'B';
+	else if (c == 'Г') return _G;
+	else if (c == 'Д') return _D;
+	else if (c == 'Е') return 'E';
+	else if (c == 'Ё') return _YO;
+	else if (c == 'Ж') return _ZH;
+	else if (c == 'З') return _Z;
+	else if (c == 'И') return _I;
+	else if (c == 'Й') return _II;
+	else if (c == 'К') return 'K';
+	else if (c == 'Л') return _L;
+	else if (c == 'М') return 'M';
+	else if (c == 'Н') return 'H';
+	else if (c == 'О') return 'O';
+	else if (c == 'П') return _P;
+	else if (c == 'Р') return 'P';
+	else if (c == 'С') return 'C';
+	else if (c == 'Т') return 'T';
+	else if (c == 'У') return _U;
+	else if (c == 'Ф') return _F;
+	else if (c == 'Х') return 'X';
+	else if (c == 'Ц') return _C;
+	else if (c == 'Ч') return _CH;
+	else if (c == 'Ш') return _SH;
+	else if (c == 'Щ') return _SSH;
+	else if (c == 'Ъ') return _SS;
+	else if (c == 'Ы') return _Y;
+	else if (c == 'Ь') return 'b';
+	else if (c == 'Э') return _E;
+	else if (c == 'Ю') return _YU;
+	else if (c == 'Я') return _YA;
+	else if (c == 'а') return 'a';
+	else if (c == 'б') return _b;
+	else if (c == 'в') return _v;
+	else if (c == 'г') return _g;
+	else if (c == 'д') return _d;
+	else if (c == 'е') return 'e';
+	//else if (c == 'ё') return _yo;
+	else if (c == 'ж') return _zh;
+	else if (c == 'з') return _z;
+	else if (c == 'и') return _i;
+	else if (c == 'й') return _ii;
+	else if (c == 'к') return _k;
+	else if (c == 'л') return _l;
+	else if (c == 'м') return _m;
+	else if (c == 'н') return _n;
+	else if (c == 'о') return 'o';
+	else if (c == 'п') return _p;
+	else if (c == 'р') return 'p';
+	else if (c == 'с') return 'c';
+	else if (c == 'т') return _t;
+	else if (c == 'у') return 'y';
+	else if (c == 'ф') return _f;
+	else if (c == 'х') return 'x';
+	else if (c == 'ц') return _c;
+	else if (c == 'ч') return _ch;
+	else if (c == 'ш') return _sh;
+	else if (c == 'щ') return _ssh;
+	else if (c == 'ъ') return _ss;
+	else if (c == 'ы') return _y;
+	else if (c == 'ь') return _sfts;
+	else if (c == 'э') return _e;
+	else if (c == 'ю') return _yu;
+	else if (c == 'я') return _ya;
+	else if (c == '$') return _yo;// $ вместо ё, ибо "ё" вне диапазона
+	return 255;
+}
 
 /* 
 ** constants/macros 
@@ -135,10 +211,13 @@ static void lcd_write(uint8_t data,uint8_t rs)
 {
     unsigned char dataBits ;
 
-
     if (rs)
 	{   /* write data        (RS=1, RW=0) */
        lcd_rs_high();
+#ifdef _RUSSIAN_VERSION_
+	   if(data >= 'А') data = GetAdaptedChar(data);
+	   else if (data == '$') data = _yo;
+#endif
     }
 	else
 	{    /* write instruction (RS=0, RW=0) */

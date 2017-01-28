@@ -83,17 +83,11 @@ void Wr1Dec(u8 a_data, u8 a_x, u8 a_y)
 #endif
 }
 //===================================================================
-#ifdef _DEMO_VERSION_
+//#ifdef _DEMO_VERSION_
 void SendStr(u8 * str, char num)
 {
-	if (num == 2)
-	{
-		lcd_putc(*str);
-		lcd_putc(*(str+1));
-	}
-	else
-		for(u8 i = 0; i < num; i++)
-			lcd_putc(*(str + i));
+	for(u8 i = 0; i < num; i++)
+		lcd_putc(*(str + i));
 }// SendStr //
 
 void SplashScreen()
@@ -109,17 +103,23 @@ void SplashScreen()
 	for(u8 i = 0; i <= 16; i+=2)
 	{
 		lcd_clrscr();
-		lcd_gotoxy(16-i, 0);
-		SendStr(str1, i + 1);
+		i8 j = 15 - i;
+		u8 k = i + 1;
+		if (i == 16)
+		{
+			j = 0; k = 16;
+		}
+		lcd_gotoxy(j, 0);
+		SendStr(str1, k);
 		lcd_gotoxy(0, 1);
-		SendStr(str2 + 16 - i, i + 1);
+		SendStr(str2 + j, k);
 		_delay_ms(150);
 		wdt_feed();
 	}
 
-	lcd_puts_p((const char *)_Splash1);
+	/*lcd_puts_p((const char *)_Splash1);
 	lcd_gotoxy(0, 1);
-	lcd_puts_p((const char *)_Splash2);
+	lcd_puts_p((const char *)_Splash2);*/
 	
 	for(u8 i = 0; i < 20; i++) // жду 2с
 	{
@@ -137,7 +137,7 @@ void SplashScreen()
 		wdt_feed();
 	}
 }
-#endif
+//#endif
 
 void WriteWeldReadiness()
 {
