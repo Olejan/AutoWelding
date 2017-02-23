@@ -2,8 +2,8 @@
 
 extern void writeByteEE(u16 addr, u8 data);
 extern u8 readByteEE(u16 addr);
-extern BOOL wait_40us();
-extern BOOL wait_200us();
+extern BOOL wait_100us();
+extern BOOL wait_300us();
 extern void wait_x10us(u8 a_i);
 extern void WrDec(u8 a_data, u8 a_x, u8 a_y);
 extern void Wr3Dec(u8 a_data, u8 a_x, u8 a_y);
@@ -127,20 +127,30 @@ u8 doPressing()
 
 void impulse()
 { // пока не установитс€ флаг - управл€ем трансформатором
+	//while(!flags.halfPeriod)
+	//PORTTRANS &= ~(1<<pinTrans);
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+	while(!flags.transswitchoff)
+#else
 	while(!flags.halfPeriod)
+#endif
 	{
 		if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
 			break; // если педали отпустили - значит аварийна€ остановка
 		switchTrans(ON); // включаем трансформатор
-		if (!wait_40us()) // если прерывани€ на int0 не было
+		if (!wait_100us()) // если прерывани€ на int0 не было
 		{
 			switchTrans(OFF); // отключаем трансформатор
-			if (wait_200us()) // если было прерывание, выходим
+			if (wait_300us()) // если было прерывание, выходим
 				break;
 		}
 		else
 			break;
 	}
+	//PORTTRANS |= (1<<pinTrans);
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+	flags.transswitchoff = 0;
+#endif
 	switchTrans(OFF); // отключаем трансформатор
 }
 
@@ -169,6 +179,9 @@ u8 doPreHeating()
 		}
 		wdt_feed();
 		flags.halfPeriod = 0;
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+		flags.transswitchoff = 0;
+#endif
 		tmpCnt = cntPreHeating;
 		while(tmpCnt--)
 			_delay_us(270/*330*/);//!!//
@@ -208,6 +221,9 @@ u8 doHeating()
 		}
 		wdt_feed();
 		flags.halfPeriod = 0; // сбросим флаг
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+		flags.transswitchoff = 0;
+#endif
 		//WrDec(heating, 14, lcdstr1); // и отправл€ю туда значение сжати€ (~160us)
 		u8 cntDelayON = 9 - m_nCurrent;
 		while(cntDelayON--)

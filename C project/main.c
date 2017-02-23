@@ -64,16 +64,31 @@ ISR(TIMER0_OVF_vect)
 	}
 }
 
+static u8 _backfront = 0;
 ISR (INT0_vect)
 {
 	//pulsCnt++;
 	// можно здесь запускать таймер на время включения диода до 0, а в процедуре обработки прерывания таймера отключать его и устанавливать флаг flags.halfPeriod = 1
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+	if(flags.syncfront == _backfront) // если задний фронт
+	{
+		PORTTRANS |= 1<<pinTrans; // отключаем трансформатор 
+		flags.transswitchoff = 1;
+	}
+	else
+	{
+		flags.halfPeriod = 1;
+		//PORTTRANS &= ~(1<<pinTrans);
+	}
+	flags.syncfront ^= 1;
+#else
 	flags.halfPeriod = 1;
+#endif
 	//PORTTRANS ^= 1<<pinTrans;
 }
 
 ISR (INT1_vect)
-{
+{return;
 	if (flags.currentIsEnable == 1)// если ток был разрешён
 	{// запрещаем его
 		flags.currentIsEnable = 0; // запрещаю ток
@@ -109,7 +124,12 @@ void initProc()
 	TCCR0 = (1<<CS01)|(1<<CS00);    // включаю Т0 с прескаллером 64
 
 	// INT0
-	MCUCR |= (2 << ISC10) | (3 << ISC00); // int1 по заднему фронту (кнопка) и int0 по переднему фронту (синхроимпульс)
+	MCUCR = (2 << ISC10); // int1 по заднему фронту (кнопка)
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+	MCUCR |= (1 << ISC00); // int0 по любому фронту (синхроимпульс)
+#else
+	MCUCR |= (3 << ISC00); // int0 по переднему фронту (синхроимпульс)
+#endif
 	GICR = (1 << INT0) | (1 << INT1); // разрешаю внешние прерывания
 
 	SFIOR |= 1 << PUD; // отключаю внутреннюю подтяжку портов
@@ -133,10 +153,38 @@ void initVars()
 	flags.currentIsEnable = 1; // разрешаю ток
 	switchHL(pinCurrentHL, ON);
 }
+// Узнаём, какой фронт задний по разнице между прерываниями, и фиксируем это
+void initFronts()
+{
+	u32 first = 0;
+	u32 second = 0;
+	flags.syncfront = 0;
+	while(flags.syncfront == 0){}
+	flags.syncfront = 0;
+	while(flags.syncfront == 0)
+	{
+		_delay_us(1);
+		first++;
+	}
+	flags.syncfront = 0;
+	while(flags.syncfront == 0)
+	{
+		_delay_us(1);
+		second++;
+	}
+	flags.halfPeriod = 0;
+	flags.transswitchoff = 0;
+	//while(flags.halfPeriod == 0 || flags.transswitchoff == 0){}
+	if(first > second)
+		_backfront = 1;
+	else
+		_backfront = 0;
+}
 void init()
 {
 	wdt_start(wdt_250ms);
 	initProc();
+	initFronts();
 	initVars();
 	initParams();
 #ifndef _DEBUG_
@@ -154,7 +202,7 @@ int main()
 	init();
 	//Test();
 	wdt_start(wdt_60ms);
-	while(1)
+	while(1)//{}
 	{
 		wdt_feed();
 		DoMenu();

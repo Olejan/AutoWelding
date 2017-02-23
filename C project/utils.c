@@ -14,19 +14,27 @@ void wait_x10us(u8 a_i)
 {
 	while(a_i--)
 	{
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+		if (flags.halfPeriod || flags.transswitchoff) // если срочно нужно выключить транс
+#else
 		if (flags.halfPeriod) // если пришло прерывание на int0
+#endif
 			return;
 		_delay_us(8);
 	}
 }
 // задержка ровно 40мкс с проверкой флага int0
-BOOL wait_40us()
+BOOL wait_100us()
 {
-	u8 i = 4;
+	u8 i = 10;
 	while(i--)
 	{
 		_delay_us(7);
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+		if (flags.halfPeriod || flags.transswitchoff) // если срочно нужно выключить транс
+#else
 		if (flags.halfPeriod) // если пришло прерывание на int0
+#endif
 			return TRUE;
 	}
 	asm("nop");
@@ -38,13 +46,17 @@ BOOL wait_40us()
 	return FALSE; // прерывание во время выполнения функции не приходило
 }
 // задержка ровно 200мкс с проверкой флага int0
-BOOL wait_200us()
+BOOL wait_300us()
 {
-	u8 i = 20;
+	u8 i = 30;
 	while(i--)
 	{
 		_delay_us(8);
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+		if (flags.halfPeriod || flags.transswitchoff) // если срочно нужно выключить транс
+#else
 		if (flags.halfPeriod) // если пришло прерывание на int0
+#endif
 			return TRUE;
 	}
 	asm("nop");
@@ -131,7 +143,7 @@ u8 readByteEE(u16 addr)
 }*/
 
 void switchTrans(u8 a_state)
-{
+{//return;
 	if (flags.currentIsEnable == 0)
 	{
 		PORTTRANS |= 1<<pinTrans; // отключаем трансформатор
