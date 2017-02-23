@@ -50,6 +50,7 @@ x64/
 build/
 [Bb]in/
 [Oo]bj/
+[Dd]efault/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
@@ -226,3 +227,4 @@ pip-log.txt
 *.png
 *.csv
 *.svg
+*.aws
