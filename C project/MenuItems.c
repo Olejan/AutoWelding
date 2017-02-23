@@ -49,7 +49,7 @@ __attribute__((section(".eeprom")))u8 ee_startprg = 2;
 const u8 PROGMEM
 	_Empty[]			= "                ",
 #ifndef _RUSSIAN_VERSION_
-	_ViewInfo1[]		= "AutoWelding v1.2",
+	_ViewInfo1[]		= "AutoWelding v1.3",
 	_InfoAuto[]			= "Auto (Pause    )",
 	_InfoSimple[]		= " Mode is Simple ",
 	_ViewParams1[]		= "7 H: 30 M:5 I:3 ",
@@ -87,8 +87,8 @@ const u8 PROGMEM
 	_Demo1[]			= " Demo version   ",
 	_Demo2[]			= "   Demo version ";
 #else
-	_ViewInfo1[]		= "АвтоСварка v1.2R",
-	_InfoAuto[]			= "Авто (Пауза    )",
+	_ViewInfo1[]		= "АвтоСварка v1.3R",
+	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSimple[]		= "Режим Одиночный ",
 	_ViewParams1[]		= "7 Н: 30 М:5 Т:3 ",
 	_ViewParams2[]		= "Сж:450*30 Пр:110",
@@ -114,7 +114,7 @@ const u8 PROGMEM
 	_PressingIs[]		= " Сжатие         ",
 	_HeatingIs[]		= " Нагрев         ",
 	_ForgingIs[]		= " Проковка       ",
-	_Auto[]				= "  Автомат  ",
+	_Auto[]				= "    Цикл   ",
 	_Simple[]			= " Одиночный ",
 	_Running[]			= "    в процессе! ",
 	_Ready[]			= "Готово! Нажмите ",
