@@ -95,7 +95,7 @@ void UpdateLcdParam(u8 a_ParamsId, u8 a_nVal)
 #ifndef _RUSSIAN_VERSION_
 			lcd_gotoxy(6, lcdstr2);
 #else
-			lcd_gotoxy(5, lcdstr2);
+			lcd_gotoxy(7, lcdstr2);
 #endif
 			if (a_nVal == SIMPLE_MODE)
 				lcd_puts_p((const char *)_Simple);

@@ -46,10 +46,10 @@ __attribute__((section(".eeprom")))u8 ee_startprg = 2;
 //__attribute__((section(".eeprom")))u8 ee_mode = SIMPLE_MODE;
 //__attribute__((section(".eeprom")))u8 ee_pause = MAX_PAUSE;
 //=========================== строки меню ===========================
-const u8 PROGMEM
+const char PROGMEM
 	_Empty[]			= "                ",
 #ifndef _RUSSIAN_VERSION_
-	_ViewInfo1[]		= "AutoWelding v1.3",
+	_ViewInfo1[]		= "AutoWelding v0.4",
 	_InfoAuto[]			= "Auto (Pause    )",
 	_InfoSimple[]		= " Mode is Simple ",
 	_ViewParams1[]		= "7 H: 30 M:5 I:3 ",
@@ -86,8 +86,10 @@ const u8 PROGMEM
 	_Splash2[]			= "   auto welding!",
 	_Demo1[]			= " Demo version   ",
 	_Demo2[]			= "   Demo version ";
+	_SignalAbscent[]	= "Synchronization ";
+	_Synch[]			= "     is abscent!";
 #else
-	_ViewInfo1[]		= "АвтоСварка v1.3R",
+	_ViewInfo1[]		= "АвтоСварка v0.4R",
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSimple[]		= "Режим Одиночный ",
 	_ViewParams1[]		= "7 Н: 30 М:5 Т:3 ",
@@ -114,8 +116,8 @@ const u8 PROGMEM
 	_PressingIs[]		= " Сжатие         ",
 	_HeatingIs[]		= " Нагрев         ",
 	_ForgingIs[]		= " Проковка       ",
-	_Auto[]				= "    Цикл   ",
-	_Simple[]			= " Одиночный ",
+	_Auto[]				= "   Цикл  ",
+	_Simple[]			= "Одиночный",
 	_Running[]			= "    в процессе! ",
 	_Ready[]			= "Готово! Нажмите ",
 	_ForWelding[]		= "педальдля сварки",
@@ -123,7 +125,9 @@ const u8 PROGMEM
 	_Splash1[]			= "Да будет ваш    ",
 	_Splash2[]			= "  шов крепким!!!",
 	_Demo1[]			= " Демо версия    ",
-	_Demo2[]			= "   Демо версия  ";
+	_Demo2[]			= "   Демо версия  ",
+	_SignalAbscent[]	= "Нет сигнала     ",
+	_Synch[]			= "  синхронизации!";
 #endif
 
 
@@ -271,12 +275,15 @@ void fParamMode()
 		switch(get_key())
 		{
 			case keyLeft:
-				SetMenu(&mParamCurrent);
-			break;
-			case keyRight:
 				if (curMode.get() == AUTO_MODE)
 					SetMenu(&mParamPause);
 				else
+					SetMenu(&mParamForging);
+			break;
+			case keyRight:
+				/*if (curMode.get() == AUTO_MODE)
+					SetMenu(&mParamPause);
+				else*/
 					SetMenu(&mParamPrePressing);
 			break;
 			case keyUp:
@@ -295,10 +302,10 @@ void fParamPause()
 		switch(get_key())
 		{
 			case keyLeft:
-				SetMenu(&mParamMode);
+				SetMenu(&mParamForging);
 			break;
 			case keyRight:
-				SetMenu(&mParamPrePressing);
+				SetMenu(&mParamMode);
 			break;
 			case keyUp:
 				SetMenu(&mChoosePrgStngs);
@@ -337,9 +344,9 @@ void fParamPrePressing()
 		switch(get_key())
 		{
 			case keyLeft:
-				if (curMode.get() == AUTO_MODE)
+				/*if (curMode.get() == AUTO_MODE)
 					SetMenu(&mParamPause);
-				else
+				else*/
 					SetMenu(&mParamMode);
 			break;
 			case keyRight:
@@ -362,7 +369,7 @@ void fParamPressing()
 				SetMenu(&mParamPrePressing);
 			break;
 			case keyRight:
-				SetMenu(&mParamHeating);
+				SetMenu(&mParamModulation);
 			break;
 			case keyUp:
 				SetMenu(&mChoosePrgStngs);
@@ -378,7 +385,7 @@ void fParamHeating()
 		switch(get_key())
 		{
 			case keyLeft:
-				SetMenu(&mParamPressing);
+				SetMenu(&mParamCurrent);
 			break;
 			case keyRight:
 				SetMenu(&mParamForging);
@@ -400,7 +407,10 @@ void fParamForging()
 				SetMenu(&mParamHeating);
 			break;
 			case keyRight:
-				SetMenu(&mParamModulation);
+				if (curMode.get() == AUTO_MODE)
+				SetMenu(&mParamPause);
+				else
+				SetMenu(&mParamMode);
 			break;
 			case keyUp:
 				SetMenu(&mChoosePrgStngs);
@@ -416,7 +426,7 @@ void fParamModulation()
 		switch(get_key())
 		{
 			case keyLeft:
-				SetMenu(&mParamForging);
+				SetMenu(&mParamPressing);
 			break;
 			case keyRight:
 				SetMenu(&mParamCurrent);
@@ -438,7 +448,7 @@ void fParamCurrent()
 				SetMenu(&mParamModulation);
 			break;
 			case keyRight:
-				SetMenu(&mParamMode);
+				SetMenu(&mParamHeating);
 			break;
 			case keyUp:
 				SetMenu(&mChoosePrgStngs);

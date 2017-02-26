@@ -4,7 +4,7 @@ extern void writeByteEE(u16 addr, u8 data);
 extern u8 readByteEE(u16 addr);
 extern BOOL wait_100us();
 extern BOOL wait_300us();
-extern void wait_x10us(u8 a_i);
+//extern void wait_x10us(u8 a_i);
 extern void WrDec(u8 a_data, u8 a_x, u8 a_y);
 extern void Wr3Dec(u8 a_data, u8 a_x, u8 a_y);
 extern void Wr1Dec(u8 a_data, u8 a_x, u8 a_y);

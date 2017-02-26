@@ -19,3 +19,6 @@ extern void wdt_start(u8 level);
 extern void wdt_stop();
 extern void wdt_feed();
 extern void ResetProc();
+extern void wait_x10us(u8 a_i);
+extern void WriteSyncWarning();
+extern void WriteEmptySqreen();

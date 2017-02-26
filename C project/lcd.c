@@ -1,7 +1,7 @@
 #include "IDE.h"
 #include "lcd_drv.h"
 
-extern const u8
+extern const char
 	_Empty[],
 	_ViewParams1[],
 	_ViewParams2[],
@@ -18,7 +18,9 @@ extern const u8
 	_Demo1[],
 	_Demo2[],
 	_Ready[],
-	_ForWelding[];
+	_ForWelding[],
+	_SignalAbscent[],
+	_Synch[];
 
 
 //-------------------------------------------------------------------
@@ -138,11 +140,18 @@ void SplashScreen()
 	}
 }
 //#endif
-
-void WriteWeldReadiness()
+void WriteMessage(const char* str1, const char* str2)
 {
 	lcd_gotoxy(0, lcdstr1);
+	lcd_puts_p(str1);
+	lcd_gotoxy(0, lcdstr2);
+	lcd_puts_p(str2);
+}
+void WriteWeldReadiness()
+{
+	/*lcd_gotoxy(0, lcdstr1);
 	lcd_puts_p((const char *)_Ready);
 	lcd_gotoxy(0, lcdstr2);
-	lcd_puts_p((const char *)_ForWelding);
+	lcd_puts_p((const char *)_ForWelding);*/
+	WriteMessage(_Ready, _ForWelding);
 }

@@ -91,6 +91,7 @@ enum tag
 	TIME_PER_UNIT	= 10, // врем€ единицы измерени€ параметров: сжатие, проковка
 	SCAN_KEY_TIME	= 20, // врем€ сканировани€ кнопок, мс
 	TIME_TO_WRITE	= 30, // врем€, после которого имеет смысл выводить что-то на экран, мс
+	SYNC_NUM		= 50, // количечтво мс, после которых (на старте) по€витс€ сообщение об отсутствии синхроимпульса
 };
 
 enum tagHL
@@ -232,24 +233,24 @@ enum tagIds
 	idPrograms,
 	idChoosePrgStngs,
 	idChooseCmnStngs,
-	idChooseMode,
-	idChoosePause,
-	idChooseStartPrg,
 	idChoosePrePressing,
 	idChoosePressing,
-	idChooseHeating,
-	idChooseForging,
 	idChooseModulation,
 	idChooseCurrent,
+	idChooseHeating,
+	idChooseForging,
+	idChoosePause,
+	idChooseMode,
+	idChooseStartPrg,
 	idEditPrePressing,
 	idEditPressing,
-	idEditHeating,
-	idEditForging,
 	idEditModulation,
 	idEditCurrent,
-	idEditStartPrg,
-	idEditMode,
+	idEditHeating,
+	idEditForging,
 	idEditPause,
+	idEditMode,
+	idEditStartPrg,
 };
 
 enum tagMode
@@ -266,8 +267,8 @@ enum tagMode
 typedef struct PROGMEM
 {
 	const u8 id;	// id меню
-	const u8* str1;	// 1-€ строка
-	const u8* str2; // 2-€ строка
+	const char* str1;	// 1-€ строка
+	const char* str2; // 2-€ строка
 	void (*pf)();	// функци€ данного меню
 } MenuItem;
 

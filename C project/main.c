@@ -19,6 +19,10 @@ volatile u32 nTimeMs = 0; // глобальный счётчик микросе�
 volatile u32 nStartTime = 0; // буфер для засекания отсчёта времени
 volatile u32 waitTime; // декриментируемый счётчик для жёстких задержек (без возможности выхода из функции задержки до её окончания)
 volatile u8 couScanKeys; // счётчик для сканирования кнопок
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+volatile u8 syncpresent = SYNC_NUM; // детектор пропадания синхроимпульса - если == 0, значит синхроимпульс пропал.
+static u8 _backfront = 0;
+#endif
 volatile tagFlags flags;
 //=========================================================================
 extern void DoMenu();
@@ -62,11 +66,17 @@ ISR(TIMER0_OVF_vect)
 		couScanKeys = SCAN_KEY_TIME; // t = 0.1 s
 		flags.scanKey = 1;
 	}
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+	if(syncpresent)
+		syncpresent--;
+#endif
 }
 
-static u8 _backfront = 0;
-ISR (INT0_vect)
+ISR (INT0_vect) // прерывание по синхроимпульсу
 {
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+	syncpresent = SYNC_NUM; // обновляю
+#endif
 	//pulsCnt++;
 	// можно здесь запускать таймер на время включения диода до 0, а в процедуре обработки прерывания таймера отключать его и устанавливать флаг flags.halfPeriod = 1
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
@@ -88,7 +98,7 @@ ISR (INT0_vect)
 }
 
 ISR (INT1_vect)
-{return;
+{//return;
 	if (flags.currentIsEnable == 1)// если ток был разрешён
 	{// запрещаем его
 		flags.currentIsEnable = 0; // запрещаю ток
@@ -153,25 +163,48 @@ void initVars()
 	flags.currentIsEnable = 1; // разрешаю ток
 	switchHL(pinCurrentHL, ON);
 }
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+extern const char _SignalAbscent[], _Synch[], _Empty[];
+extern void WriteMessage(const char* str1, const char* str2);
 // Узнаём, какой фронт задний по разнице между прерываниями, и фиксируем это
 void initFronts()
 {
+	wdt_start(wdt_1s);
+	begin:
+	if(syncpresent == 0)
+	{
+		WriteMessage(_SignalAbscent, _Synch);
+		_delay_ms(500);
+		wdt_feed();
+		WriteMessage(_Empty, _Empty);
+		_delay_ms(500);
+		wdt_feed();
+		goto begin;
+	}
 	u32 first = 0;
 	u32 second = 0;
 	flags.syncfront = 0;
-	while(flags.syncfront == 0){}
-	flags.syncfront = 0;
 	while(flags.syncfront == 0)
+	{
+		if(syncpresent == 0)
+			goto begin;
+	}
+	flags.syncfront = 0;
+	while(flags.syncfront == 0 && syncpresent)
 	{
 		_delay_us(1);
 		first++;
 	}
+	if(syncpresent == 0)
+		goto begin;
 	flags.syncfront = 0;
-	while(flags.syncfront == 0)
+	while(flags.syncfront == 0 && syncpresent)
 	{
 		_delay_us(1);
 		second++;
 	}
+	if(syncpresent == 0)
+		goto begin;
 	flags.halfPeriod = 0;
 	flags.transswitchoff = 0;
 	//while(flags.halfPeriod == 0 || flags.transswitchoff == 0){}
@@ -179,16 +212,20 @@ void initFronts()
 		_backfront = 1;
 	else
 		_backfront = 0;
+	wdt_start(wdt_250ms);
 }
+#endif
 void init()
 {
 	wdt_start(wdt_250ms);
 	initProc();
-	initFronts();
 	initVars();
 	initParams();
 #ifndef _DEBUG_
 	lcd_init(LCD_DISP_ON);
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+	initFronts();
+#endif
 	//init_lcd_simbols();
 //#ifdef _DEMO_VERSION_
 	SplashScreen();
