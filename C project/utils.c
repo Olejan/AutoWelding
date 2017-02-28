@@ -143,7 +143,7 @@ u8 readByteEE(u16 addr)
 }*/
 
 void switchTrans(u8 a_state)
-{//return;
+{
 	if (flags.currentIsEnable == 0)
 	{
 		PORTTRANS |= 1<<pinTrans; // отключаем трансформатор
@@ -154,19 +154,22 @@ void switchTrans(u8 a_state)
 	else
 		PORTTRANS |= 1<<pinTrans; // отключаем трансформатор
 }
-
-/*inline BOOL isPedal1Pressed()
+//=========================== inline section ===============================
+// Write here inline functions
+//==========================================================================
+inline BOOL isPedal1Pressed()
 {
-	if (!(PINPEDAL1 & (1<<pinPedal1)))
+	if(!(PINPEDAL1 & (1<<pinPedal1)))
 		return TRUE; // педаль предварительного сжатия нажата
 	return FALSE; // педаль предварительного сжатия отжата
 }
 inline BOOL isPedal2Pressed()
 {
-	if (!(PINPEDAL2 & (1<<pinPedal2)))
+	if(!(PINPEDAL2 & (1<<pinPedal2)))
 		return TRUE; // педаль нажата
 	return FALSE; // педаль отжата
-}*/
+}
+//==========================================================================
 
 void switchValve1(u8 state)
 {

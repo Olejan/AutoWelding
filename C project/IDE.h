@@ -7,8 +7,6 @@
 //#include <stdbool.h>
 #include <util/delay.h>	 // библиотека задержек
 
-#include "InlineFunctions.h"
-
 
 #ifdef WDT_ENABLE
 extern void SetWdtTimeLabel();
@@ -22,3 +20,5 @@ extern void ResetProc();
 extern void wait_x10us(u8 a_i);
 extern void WriteSyncWarning();
 extern void WriteEmptySqreen();
+extern BOOL isPedal1Pressed();
+extern BOOL isPedal2Pressed();

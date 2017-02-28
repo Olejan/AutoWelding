@@ -24,6 +24,7 @@ volatile u8 syncpresent = SYNC_NUM; // детектор пропадания с�
 static u8 _backfront = 0;
 #endif
 volatile tagFlags flags;
+static u8 _100usTic;
 //=========================================================================
 extern void DoMenu();
 extern u8 DoWelding();
@@ -72,8 +73,20 @@ ISR(TIMER0_OVF_vect)
 #endif
 }
 
+volatile u16 _TCNT1;
+ISR (TIMER1_OVF_vect)
+{
+	TCNT1 = _TCNT1;
+	//_100usTic++;
+	flags.T1IsUp = 1;
+	//PORTTRANS ^= 1<<pinTrans;
+	TCCR1B = 0; // выключаю T1
+}
+
 ISR (INT0_vect) // прерывание по синхроимпульсу
 {
+	/*PORTLED ^= 1 << pinHeatingHL;
+	return;*/
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	syncpresent = SYNC_NUM; // обновляю
 #endif
@@ -89,6 +102,11 @@ ISR (INT0_vect) // прерывание по синхроимпульсу
 	{
 		flags.halfPeriod = 1;
 		//PORTTRANS &= ~(1<<pinTrans);
+		if(flags.useT1forHeating == 1)
+		{
+			TCNT1 = _TCNT1;
+			TCCR1B = 1; // включаю T1
+		}
 	}
 	flags.syncfront ^= 1;
 #else
@@ -129,9 +147,13 @@ ISR(BADISR_vect)
 void initProc()
 {
 	// T0
-	TIMSK = (1<<TOIE0); // разрешаю прерывание по переполнению Т0
+	TIMSK = (1<<TOIE0) | (1<<TOIE1); // разрешаю прерывание по переполнению Т0
 	TCNT0 = 0xc1; //(0x82 - 2 ms) (0xc1 - 1ms)
 	TCCR0 = (1<<CS01)|(1<<CS00);    // включаю Т0 с прескаллером 64
+	// T1
+	TCNT1H = 0xFE;
+	TCNT1L = 0x70;
+	//TCCR1B = 1;//<<CS10;
 
 	// INT0
 	MCUCR = (2 << ISC10); // int1 по заднему фронту (кнопка)

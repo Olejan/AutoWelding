@@ -21,6 +21,7 @@ extern void switchModeHL(u8 a_mode);
 
 extern volatile tagFlags flags;
 extern volatile u32 waitTime;
+extern volatile u16 _TCNT1;
 
 
 static u8 m_nPrePressing = 0; // число предварительного сжати€
@@ -127,8 +128,6 @@ u8 doPressing()
 
 void impulse()
 { // пока не установитс€ флаг - управл€ем трансформатором
-	//while(!flags.halfPeriod)
-	//PORTTRANS &= ~(1<<pinTrans);
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	while(!flags.transswitchoff)
 #else
@@ -147,7 +146,6 @@ void impulse()
 		else
 			break;
 	}
-	//PORTTRANS |= (1<<pinTrans);
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	flags.transswitchoff = 0;
 #endif
@@ -196,49 +194,68 @@ u8 doPreHeating()
 	return TRUE;
 }
 
+u16 times[]=
+{
+	0x7360,	// 9ms
+	0x82FF, // 8ms
+	0x929F, // 7ms
+	0xA23F, // 6ms
+	0xB1E0, // 5ms
+	0xC17F, // 4ms
+	0xD11F, // 3ms
+	0xE0BF, // 2ms
+	0xF05F, // 1ms
+};
 u8 doHeating()
 {
 	wdt_start(wdt_60ms);
-	if (m_nModulation)// если модул€ци€ не 0
+	/*if (m_nModulation)// если модул€ци€ не 0
 	{ // расчитываю еЄ параметры
-		if ((m_nModulation < 10) && (m_nHeating < m_cntModPeriod))
+		if (m_nHeating < m_nModulation)// m_cntModPeriod)
 			m_cntModPeriod = m_nHeating;
 		else
 			m_cntModPeriod = m_nModulation;
 		if (m_nCurrent)
 			m_nModDelay = 190 * m_nCurrent / m_cntModPeriod;
 	}
+	else
+	{
+		m_cntModPeriod = 0;
+	}*/
 	u8 heating = m_nHeating;
+	if(m_nCurrent < 9)
+	{
+		_TCNT1 = times[m_nCurrent];
+		TCNT1 = _TCNT1;
+		TCCR1B = 1;
+		flags.useT1forHeating = 1;
+	}
+	else
+	{
+		flags.useT1forHeating = 0;
+		TCCR1B = 0;
+	}
 	while(heating--)
 	{
-		while(!flags.halfPeriod) // ждЄм прерывание int0
+		//while(!flags.halfPeriod) // ждЄм прерывание int0
+		if (m_nCurrent < 9)
 		{
-			if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+			while(flags.T1IsUp == 0)
 			{
-				switchHL(pinHeatingHL, OFF);
-				return FALSE;
-			}				
+				if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+				{
+					switchHL(pinHeatingHL, OFF);
+					TCCR1B = 0;
+					return FALSE;
+				}
+			}
 		}
 		wdt_feed();
 		flags.halfPeriod = 0; // сбросим флаг
+		flags.T1IsUp = 0;
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 		flags.transswitchoff = 0;
 #endif
-		//WrDec(heating, 14, lcdstr1); // и отправл€ю туда значение сжати€ (~160us)
-		u8 cntDelayON = 9 - m_nCurrent;
-		while(cntDelayON--)
-			_delay_us(777);
-		if (m_nCurrent)
-		{
-			if (m_cntModPeriod)
-			{
-				u8 tmp = m_cntModPeriod;
-				while(tmp--)
-					wait_x10us((m_nModDelay / 10) << 2);
-				if (!flags.heating)
-					m_cntModPeriod--;
-			}
-		}
 		impulse();
 	}
 	switchHL(pinHeatingHL, OFF);
@@ -337,8 +354,8 @@ u8 DoWelding()
 				//P2cntLow = 0;
 				u8 res = doPressing(); // прижим сварных деталей
 				if (res == FALSE) return WELD_HAS_BROKEN;
-				res = doPreHeating(); // прогрев
-				if (res == FALSE) return WELD_HAS_BROKEN;
+				///res = doPreHeating(); // прогрев
+				///if (res == FALSE) return WELD_HAS_BROKEN;
 				res = doHeating(); // нагрев
 				if (res == FALSE) return WELD_HAS_BROKEN;
 				res = doForging(); // проковка сварной точки

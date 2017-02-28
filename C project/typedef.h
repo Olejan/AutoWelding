@@ -217,14 +217,15 @@ enum tagDimentionLCD
 
 typedef struct
 {
-	u16 time40us	:1;
-	u16 dirty		:1; // данные в массиве LCD изменены
+	//u16 dirty		:1; // данные в массиве LCD изменены
 	u16 halfPeriod	:1; // флаг прихода полупериода сетевого напряжения на int0
 	u16 syncfront	:1; // фронт синхроимпульса: 0 - передний, 1 - задний
 	u16 transswitchoff	:1; // выключить трансформатор
-	u16 heating		:1; // flag_nagrev
+	//u16 heating		:1; // flag_nagrev
 	u16 scanKey		:1; // можно сканировать кнопки
 	u16 currentIsEnable	:1; // выход тока открыт/закрыт (1/0)
+	u16 T1IsUp	:1;	// прошло 100мкс
+	u16 useT1forHeating	:1;	// сейчас задача нагрева
 }tagFlags;
 
 enum tagIds
