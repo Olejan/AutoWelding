@@ -76,7 +76,7 @@ ISR(TIMER0_OVF_vect)
 volatile u16 _TCNT1;
 ISR (TIMER1_OVF_vect)
 {
-	TCNT1 = _TCNT1;
+	//TCNT1 = _TCNT1;
 	//_100usTic++;
 	flags.T1IsUp = 1;
 	//PORTTRANS ^= 1<<pinTrans;
