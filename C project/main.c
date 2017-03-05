@@ -258,7 +258,6 @@ void init()
 int main()
 {
 	init();
-	//Test();
 	wdt_start(wdt_60ms);
 	while(1)//{}
 	{

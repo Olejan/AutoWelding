@@ -103,6 +103,7 @@ void UpdateLcdParam(u8 a_ParamsId, u8 a_nVal)
 				lcd_puts_p((const char *)_Auto);
 			break;
 		case cmnprmStartPrg:
+		case cmnprmPedalNum:
 			WrDec(a_nVal, 14, lcdstr2);
 			break;
 	}
@@ -236,6 +237,9 @@ void SetMenuData(u8 a_id)
 		case idChooseStartPrg:		case idEditStartPrg:
 			param = cmnprmStartPrg;
 			break;
+		case idChoosePedalNum:		case idEditPedalNum:
+			param = cmnprmPedalNum;
+			break;
 	}
 	switch(a_id)
 	{
@@ -248,6 +252,7 @@ void SetMenuData(u8 a_id)
 		case idChooseMode:			case idEditMode:
 		case idChoosePause:			case idEditPause:
 		case idChooseStartPrg:		case idEditStartPrg:
+		case idChoosePedalNum:		case idEditPedalNum:
 			if (param != 0xff)
 				UpdateLcdParam(param, GetValue(param));
 			break;

@@ -37,6 +37,7 @@ static u8 m_nForging = 0; // число проковки
 static u8 m_nModulation = 0; // число модул€ции
 static u8 m_nCurrent = 0; // число мощности тока
 static u8 m_nCurPrg = 0; // текуща€ программа
+static u8 m_nPedalNum = 2; // количество педалей
 static u8 m_nMode = AUTO_MODE;
 static u8 m_nPause = MAX_PAUSE;
 
@@ -450,11 +451,13 @@ void UpdateParams()
 
 u8 GetValue(u8 a_nParamId)
 {
-	if (a_nParamId >= paramPrePressing && a_nParamId <= cmnprmStartPrg)
+	if (a_nParamId >= paramPrePressing && a_nParamId <= cmnprmPedalNum)
 	{
 		u16 addr = 0;
 		if (a_nParamId == cmnprmStartPrg)
 			addr = addrStartPrg;
+		else if (a_nParamId == cmnprmPedalNum)
+			addr = addrPedalNum;
 		else
 			addr = m_nCurPrg * paramNum + a_nParamId + 1; // a_nParamId + 1 == addr...
 		/*switch(a_nParamId)
@@ -476,11 +479,13 @@ u8 GetValue(u8 a_nParamId)
 
 void SetValue(u8 a_nParamId, u8 a_nVal)
 {
-	if (a_nParamId >= paramPrePressing && a_nParamId <= cmnprmStartPrg)
+	if (a_nParamId >= paramPrePressing && a_nParamId <= cmnprmPedalNum)
 	{
 		u16 addr = 0;
 		if (a_nParamId == cmnprmStartPrg)
 			addr = addrStartPrg;
+		else if (a_nParamId == cmnprmPedalNum)
+			addr = addrPedalNum;
 		else
 			addr = m_nCurPrg * paramNum + a_nParamId + 1; // a_nParamId + 1 == addr...
 		switch(a_nParamId)
@@ -539,6 +544,12 @@ void SetValue(u8 a_nParamId, u8 a_nVal)
 					return;
 				//writeByteEE(addrStartPrg, a_nVal);
 				break;
+			case cmnprmPedalNum:
+				if (a_nVal > maxPedalNum || a_nVal < minPedalNum)
+					return;
+				m_nPedalNum = a_nVal;
+				//writeByteEE(addrStartPrg, a_nVal);
+				break;
 		}
 		writeByteEE(addr, a_nVal);
 	}
@@ -554,6 +565,7 @@ void initParams()
 		m_nCurPrg = firstPrg;
 		writeByteEE(addrStartPrg, firstPrg);
 	}
+	m_nPedalNum = readByteEE(addrPedalNum);
 	// init local params
 	initPrgParams(m_nCurPrg); // обновл€ю значение параметров программы
 }
@@ -586,7 +598,7 @@ void initPrgParams(u8 a_nPrg)
 		m_nPause = MAX_PAUSE;
 }
 
-#if 1
+#if 0
 void Test()
 {
 	for(;;)// делать всегда

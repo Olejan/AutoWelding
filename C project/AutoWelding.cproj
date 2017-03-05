@@ -168,25 +168,19 @@
     <Compile Include="buttons.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="Headers\buttons.h">
+    <Compile Include="buttons.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="Headers\IDE.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Headers\InlineFunctions.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Headers\lcd_drv.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Headers\typedef.h">
+    <Compile Include="IDE.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="lcd.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="lcd_drv.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lcd_drv.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="main.c">
@@ -196,6 +190,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="MenuItems.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="typedef.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="utils.c">
@@ -212,9 +209,6 @@
     <None Include="readme.txt">
       <SubType>compile</SubType>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Headers" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>

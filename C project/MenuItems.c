@@ -14,6 +14,7 @@ void fParamForging();
 void fParamModulation();
 void fParamCurrent();
 void fCmnPrmStartPrg();
+void fCmnPrmPedalNum();
 void fEditPrePressing();
 void fEditPressing();
 void fEditHeating();
@@ -21,6 +22,7 @@ void fEditForging();
 void fEditModulation();
 void fEditCurrent();
 void fEditStartPrg();
+void fEditPedalNum();
 void fEditMode();
 void fEditPause();
 BOOL CheckUpEditTime(u32 time);
@@ -43,6 +45,7 @@ u8 eeMass[programNumber][paramNum] =
 	{10,			3,			30,			30,			0,			0,			SIMPLE_MODE,	DEF_PAUSE}
 };
 __attribute__((section(".eeprom")))u8 ee_startprg = 2;
+__attribute__((section(".eeprom")))u8 ee_pedalnum = 2;
 //__attribute__((section(".eeprom")))u8 ee_mode = SIMPLE_MODE;
 //__attribute__((section(".eeprom")))u8 ee_pause = MAX_PAUSE;
 //=========================== строки меню ===========================
@@ -73,6 +76,7 @@ const char PROGMEM
 	_WeldingIs[]		= " Welding is     ",
 	_Completed[]		= "     completed! ",
 	_StartPrg[]			= "Start Program 01",
+	_PedalNum[]			= "Pedal number   2",
 	_PressingIs[]		= " Pressing is    ",
 	_HeatingIs[]		= " Heating is     ",
 	_ForgingIs[]		= " Forging is     ",
@@ -115,6 +119,7 @@ const char PROGMEM
 	_WeldingIs[]		= " Цикл сварки    ",
 	_Completed[]		= "     заверш$н!  ",
 	_StartPrg[]			= "Стартовая прг 01",
+	_PedalNum[]			= "Всего педалей  2",
 	_PressingIs[]		= " Сжатие         ",
 	_HeatingIs[]		= " Нагрев         ",
 	_ForgingIs[]		= " Проковка       ",
@@ -143,6 +148,7 @@ const MenuItem
 	mParamMode			PROGMEM = { idChooseMode,		_ChooseParam,	_Mode,			fParamMode },
 	mParamPause			PROGMEM = { idChoosePause,		_ChooseParam,	_Pause,			fParamPause },
 	mCmnPrmStartPrg		PROGMEM = { idChooseStartPrg,	_CommonStngs,	_StartPrg,		fCmnPrmStartPrg },
+	mCmnPrmPedalNum		PROGMEM = { idChoosePedalNum,	_CommonStngs,	_PedalNum,		fCmnPrmPedalNum },
 	mParamPrePressing	PROGMEM = { idChoosePrePressing,_ChooseParam,	_PrePressing,	fParamPrePressing },
 	mParamPressing		PROGMEM = { idChoosePressing,	_ChooseParam,	_Pressing,		fParamPressing },
 	mParamHeating		PROGMEM = { idChooseHeating,	_ChooseParam,	_Heating,		fParamHeating },
@@ -156,6 +162,7 @@ const MenuItem
 	mEditModulation		PROGMEM = { idEditModulation,	_Editing,		_Modulation,	fEditModulation },
 	mEditCurrent		PROGMEM = { idEditCurrent,		_Editing, 		_Current,		fEditCurrent },
 	mEditStartPrg		PROGMEM = { idEditStartPrg,		_Editing, 		_StartPrg,		fEditStartPrg },
+	mEditPedalNum		PROGMEM = { idEditPedalNum,		_Editing, 		_PedalNum,		fEditPedalNum },
 	mEditMode			PROGMEM = { idEditMode,			_Editing,		_Mode,			fEditMode },
 	mEditPause			PROGMEM = { idEditPause,		_Editing,		_Pause,			fEditPause };
 
@@ -323,20 +330,32 @@ void fCmnPrmStartPrg()
 	if (flags.scanKey)
 		switch(get_key())
 		{
-			/*case keyLeft:
-				if (curMode.get() == AUTO_MODE)
-					SetMenu(&mParamPause);
-				else
-					SetMenu(&mParamMode);
-			break;
+			case keyLeft:
 			case keyRight:
-				SetMenu(&mParamPrePressing);
-			break;*/
+				SetMenu(&mCmnPrmPedalNum);
+			break;
 			case keyUp:
 				SetMenu(&mChooseCmnStngs);
 			break;
 			case keyDown:
 				SetMenu(&mEditStartPrg);
+			break;
+		}
+}
+void fCmnPrmPedalNum()
+{
+	if (flags.scanKey)
+		switch(get_key())
+		{
+			case keyLeft:
+			case keyRight:
+				SetMenu(&mCmnPrmStartPrg);
+			break;
+			case keyUp:
+				SetMenu(&mChooseCmnStngs);
+			break;
+			case keyDown:
+				SetMenu(&mEditPedalNum);
 			break;
 		}
 }
@@ -790,6 +809,48 @@ void fEditStartPrg()
 		}			
 		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
 			return;
+	}
+}
+
+void fEditPedalNum()
+{
+	wdt_start(wdt_60ms);
+	u8 val = readByteEE(addrPedalNum);
+	u8 oldVal = val;
+	if (val > maxPedalNum)
+	{
+		val = minPedalNum;
+		UpdateLcdParam(cmnprmPedalNum, val);
+	}
+	while(1)
+	{
+		if (flags.scanKey)
+		{
+			wdt_feed();
+			switch(get_key())
+			{
+				case keyLeft:
+					val = minPedalNum;
+					UpdateLcdParam(cmnprmPedalNum, val);
+					break;
+				case keyRight:
+					val = maxPedalNum;
+					UpdateLcdParam(cmnprmPedalNum, val);
+					break;
+				case keyUp:
+					SavedDlg(0);
+					SetMenu(&mCmnPrmPedalNum);
+					return;
+				case keyDown:
+					if (val != oldVal)
+						SetValue(cmnprmPedalNum, val);
+					SavedDlg(1);
+					SetMenu(&mCmnPrmPedalNum);
+				return;
+			}
+		}
+		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
+		return;
 	}
 }
 void fEditMode()

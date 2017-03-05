@@ -85,6 +85,8 @@ enum tag
 #else
 	lastPrg		= 9, // последняя программ
 #endif
+	minPedalNum	= 1,
+	maxPedalNum	= 2,
 	programNumber = lastPrg + 1,
 	TIME_FOR_MENU	= 30000, // время (мс), после которого нужно выходить в главное меню
 	TIME_FOR_SAVE	= 30000, // время данное для сохранения редактируемого параметра
@@ -141,6 +143,7 @@ enum tagParams
 	paramPause,				// пауза между циклами сварки
 	paramNum,				// количество параметров !!! должен стоять сразу после последнего параметра !!!
 	cmnprmStartPrg,			// стартовая программа
+	cmnprmPedalNum,			// количество педалей
 
 	minPrePressing	= 0,
 	minPressing		= 1,
@@ -179,6 +182,7 @@ enum tagEEPROMAddr
 	addrMode, // текущий режим
 	addrPause, // пауза между циклами сварки
 	addrStartPrg	= 1 + paramNum * programNumber,	// номер текущей программы (располагается за всеми программами)
+	addrPedalNum,	// количество педалей
 };
 
 enum tagLCD
@@ -252,6 +256,8 @@ enum tagIds
 	idEditPause,
 	idEditMode,
 	idEditStartPrg,
+	idChoosePedalNum,
+	idEditPedalNum,
 };
 
 enum tagMode
