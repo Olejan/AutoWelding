@@ -24,10 +24,9 @@ volatile u8 syncpresent = SYNC_NUM; // детектор пропадания с�
 static u8 _backfront = 0;
 #endif
 volatile tagFlags flags;
-static u8 _100usTic;
 //=========================================================================
 extern void DoMenu();
-extern u8 DoWelding();
+extern u8 TaskWelding();
 extern u8 getCurMenuId();
 extern u8 get_key();
 extern void SetMenu(const MenuItem* a_curMenu);
@@ -77,7 +76,6 @@ volatile u16 _TCNT1;
 ISR (TIMER1_OVF_vect)
 {
 	//TCNT1 = _TCNT1;
-	//_100usTic++;
 	flags.T1IsUp = 1;
 	//PORTTRANS ^= 1<<pinTrans;
 	TCCR1B = 0; // выключаю T1
@@ -239,6 +237,7 @@ void initFronts()
 #endif
 void init()
 {
+	//Test();
 	wdt_start(wdt_250ms);
 	initProc();
 	initVars();
@@ -270,7 +269,7 @@ int main()
 			StartTaskWelding();
 			while(isPedal1Pressed())
 			{
-				u8 res = DoWelding();
+				u8 res = TaskWelding();
 				if (res == WELD_HAS_BROKEN)
 					break;
 				wdt_feed();

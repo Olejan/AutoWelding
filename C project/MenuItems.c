@@ -49,11 +49,11 @@ __attribute__((section(".eeprom")))u8 ee_startprg = 2;
 const char PROGMEM
 	_Empty[]			= "                ",
 #ifndef _RUSSIAN_VERSION_
-	_ViewInfo1[]		= "AutoWelding v0.4",
+	_ViewInfo1[]		= "AutoWelding v0.5",
 	_InfoAuto[]			= "Auto (Pause    )",
 	_InfoSimple[]		= " Mode is Simple ",
-	_ViewParams1[]		= "7 H: 30 M:5 I:3 ",
-	_ViewParams2[]		= "Pr:450*30 Fg:110",
+	_ViewParams1[]		= "7 Pr:450*30 M:5 ",
+	_ViewParams2[]		= "I:3 H: 30 Fg:110",
 	_PrePressing[]		= "PrePressing   0 ",
 	_Pressing[]			= "Pressing        ",
 	_Heating[]			= "Heating         ",
@@ -85,15 +85,17 @@ const char PROGMEM
 	_Splash1[]			= " Welcome to the ",
 	_Splash2[]			= "   auto welding!",
 	_Demo1[]			= " Demo version   ",
-	_Demo2[]			= "   Demo version ";
-	_SignalAbscent[]	= "Synchronization ";
-	_Synch[]			= "     is abscent!";
+	_Demo2[]			= "   Demo version ",
+	_SignalAbscent[]	= "Synchronization ",
+	_Synch[]			= "      is absent!";
 #else
-	_ViewInfo1[]		= "АвтоСварка v0.4R",
+	_ViewInfo1[]		= "АвтоСварка v0.5R",
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSimple[]		= "Режим Одиночный ",
-	_ViewParams1[]		= "7 Н: 30 М:5 Т:3 ",
-	_ViewParams2[]		= "Сж:450*30 Пр:110",
+	//_ViewParams1[]		= "7 Н: 30 М:5 Т:3 ",
+	//_ViewParams2[]		= "Сж:450*30 Пр:110",
+	_ViewParams1[]		= "7 Сж:450*30 М:5 ",
+	_ViewParams2[]		= "Т:3 Н: 30 Пр:110",
 	_PrePressing[]		= "Предвар.Сж.   0 ",
 	_Pressing[]			= "Сжатие          ",
 	_Heating[]			= "Нагрев          ",
