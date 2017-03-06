@@ -26,20 +26,23 @@ extern volatile tagFlags flags;
 extern volatile u32 waitTime;
 extern volatile u16 _TCNT1;
 
+extern u8 eeMass[programNumber][paramNum];
+extern __attribute__((section(".eeprom")))u8 ee_startprg;
+extern __attribute__((section(".eeprom")))u8 ee_pedalnum;
 //=================================================================
 // Data
 //=================================================================
 
 static u8 m_nPrePressing = 0; // число предварительного сжатия
 static u8 m_nPressing = 0; // число сжатия
-static u8 m_nHeating = 0; // число нагрева
-static u8 m_nForging = 0; // число проковки
 static u8 m_nModulation = 0; // число модуляции
 static u8 m_nCurrent = 0; // число мощности тока
-static u8 m_nCurPrg = 0; // текущая программа
-static u8 m_nPedalNum = 2; // количество педалей
+static u8 m_nHeating = 0; // число нагрева
+static u8 m_nForging = 0; // число проковки
 static u8 m_nMode = AUTO_MODE;
 static u8 m_nPause = MAX_PAUSE;
+static u8 m_nCurPrg = 0; // текущая программа
+static u8 m_nPedalNum = 2; // количество педалей
 
 static u8 m_TaskWelding_State = 0; // состояние задачи сварки
 //static u8 P2cntHigh;	// кол-во зафиксированных состояний педали 2 в высоком уровне
@@ -62,7 +65,7 @@ CURMODE curMode = {setMode, getMode}; // методы get и set для обслуживания stati
 
 void setCurMode(u8 a_nPrg)
 {
-	u16 shift = a_nPrg * paramNum;
+	u16 shift = (u16)&eeMass + (int)a_nPrg * paramNum;
 	m_nMode = readByteEE(shift + addrMode); // читаем значение режима сварки
 	if (m_nMode > LAST_MODE)
 		m_nMode = SIMPLE_MODE;
@@ -451,27 +454,15 @@ void UpdateParams()
 
 u8 GetValue(u8 a_nParamId)
 {
-	if (a_nParamId >= paramPrePressing && a_nParamId <= cmnprmPedalNum)
+	if (a_nParamId >= paramPrePressing && a_nParamId <= extremeParam)
 	{
 		u16 addr = 0;
 		if (a_nParamId == cmnprmStartPrg)
-			addr = addrStartPrg;
+			addr = (u16)&ee_startprg;
 		else if (a_nParamId == cmnprmPedalNum)
-			addr = addrPedalNum;
+			addr = (u16)&ee_pedalnum;
 		else
-			addr = m_nCurPrg * paramNum + a_nParamId + 1; // a_nParamId + 1 == addr...
-		/*switch(a_nParamId)
-		{
-			case paramPrePressing:	addr += addrPrePressing;	break;
-			case paramPressing:		addr += addrPressing;		break;
-			case paramHeating:		addr += addrHeating;		break;
-			case paramForging:		addr += addrForging;		break;
-			case paramModulation:	addr += addrModulation;		break;
-			case paramCurrent:		addr += addrCurrent;		break;
-			case paramMode:			addr += addrMode;			break;
-			case paramPause:		addr += addrPause;			break;
-			case cmnprmStartPrg:	addr = addrStartPrg;		break;
-		}*/
+			addr = (u16)&eeMass + m_nCurPrg * paramNum + a_nParamId; // a_nParamId == addr...
 		return readByteEE(addr);
 	}	
 	return 0;
@@ -479,76 +470,66 @@ u8 GetValue(u8 a_nParamId)
 
 void SetValue(u8 a_nParamId, u8 a_nVal)
 {
-	if (a_nParamId >= paramPrePressing && a_nParamId <= cmnprmPedalNum)
+	if (a_nParamId >= paramPrePressing && a_nParamId <= extremeParam)
 	{
 		u16 addr = 0;
 		if (a_nParamId == cmnprmStartPrg)
-			addr = addrStartPrg;
+			addr = (u16)&ee_startprg;
 		else if (a_nParamId == cmnprmPedalNum)
-			addr = addrPedalNum;
+			addr = (u16)&ee_pedalnum;
 		else
-			addr = m_nCurPrg * paramNum + a_nParamId + 1; // a_nParamId + 1 == addr...
+			addr = (u16)&eeMass + m_nCurPrg * paramNum + a_nParamId; // a_nParamId == addr...
 		switch(a_nParamId)
 		{
 			case paramPrePressing:
 				if (a_nVal > maxPrePressing || a_nVal < minPrePressing)
 					return;
 				m_nPrePressing = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrPrePressing, a_nVal);
 				break;
 			case paramPressing:
 				if (a_nVal > maxPressing || a_nVal < minPressing)
 					return;
 				m_nPressing = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrPressing, a_nVal);
-				break;
-			case paramHeating:
-				if (a_nVal > maxHeating || a_nVal < minHeating)
-					return;
-				m_nHeating = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrHeating, a_nVal);
-				break;
-			case paramForging:
-				if (a_nVal > maxForging || a_nVal < minForging)
-					return;
-				m_nForging = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrForging, a_nVal);
 				break;
 			case paramModulation:
 				if (a_nVal > maxModulation || a_nVal < minModulation)
 					return;
 				m_nModulation = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrModulation, a_nVal);
 				break;
 			case paramCurrent:
 				if (a_nVal > maxCurrent || a_nVal < minCurrent)
 					return;
 				m_nCurrent = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrCurrent, a_nVal);
+				break;
+			case paramHeating:
+				if (a_nVal > maxHeating || a_nVal < minHeating)
+					return;
+				m_nHeating = a_nVal;
+				break;
+			case paramForging:
+				if (a_nVal > maxForging || a_nVal < minForging)
+					return;
+				m_nForging = a_nVal;
 				break;
 			case paramMode:
 				if (a_nVal > LAST_MODE)
 					return;
 				m_nMode = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrMode, a_nVal);
 				switchModeHL(m_nMode);
 				break;
 			case paramPause:
 				if (a_nVal < MIN_PAUSE || a_nVal > MAX_PAUSE)
 					return;
 				m_nPause = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrPause, a_nVal);
 				break;
 			case cmnprmStartPrg:
 				if (a_nVal > lastPrg || a_nVal < firstPrg)
 					return;
-				//writeByteEE(addrStartPrg, a_nVal);
 				break;
 			case cmnprmPedalNum:
 				if (a_nVal > maxPedalNum || a_nVal < minPedalNum)
 					return;
 				m_nPedalNum = a_nVal;
-				//writeByteEE(addrStartPrg, a_nVal);
 				break;
 		}
 		writeByteEE(addr, a_nVal);
@@ -559,39 +540,39 @@ void initParams()
 {
 	wdt_start(wdt_250ms);
 	// init common params
-	m_nCurPrg = readByteEE(addrStartPrg);
+	m_nCurPrg = readByteEE((u16)&ee_startprg);
 	if (m_nCurPrg > lastPrg)
 	{
 		m_nCurPrg = firstPrg;
-		writeByteEE(addrStartPrg, firstPrg);
+		writeByteEE((u16)&ee_startprg, firstPrg);
 	}
-	m_nPedalNum = readByteEE(addrPedalNum);
 	// init local params
 	initPrgParams(m_nCurPrg); // обновляю значение параметров программы
+	m_nPedalNum = readByteEE((u16)&ee_startprg);//addrPedalNum);
 }
 
 // инициализация переменных из eeprom
 void initPrgParams(u8 a_nPrg)
 {// выполняется 95мкс
-	u16 shift = a_nPrg * paramNum;
+	u16 shift = (u16)&eeMass + ((int)a_nPrg * paramNum);
 	m_nPrePressing = readByteEE(shift + addrPrePressing); // число предварительного сжатия
 	if (m_nPrePressing < minPrePressing || m_nPrePressing > maxPrePressing)
 		m_nPrePressing = defPrePressing;
 	m_nPressing = readByteEE(shift + addrPressing); // число сжатия
 	if (m_nPressing < minPressing || m_nPressing > maxPressing)
 		m_nPressing = defPressing;
+	m_nModulation = readByteEE(shift + addrModulation); // читаем число модуляции
+	if (m_nModulation < minModulation || m_nModulation > maxModulation)
+		m_nModulation = defModulation;
+	m_nCurrent = readByteEE(shift + addrCurrent); // читаем число мощности тока
+	if (m_nCurrent < minCurrent || m_nCurrent > maxCurrent)
+		m_nCurrent = defCurrent;
 	m_nHeating = readByteEE(shift + addrHeating); // читаем число нагрева
 	if (m_nHeating < minHeating || m_nHeating > maxHeating)
 		m_nHeating = defHeating;
 	m_nForging = readByteEE(shift + addrForging); // число проковки
 	if (m_nForging < minForging || m_nForging > maxForging)
 		m_nForging = defForging;
-	m_nCurrent = readByteEE(shift + addrCurrent); // читаем число мощности тока
-	if (m_nCurrent < minCurrent || m_nCurrent > maxCurrent)
-		m_nCurrent = defCurrent;
-	m_nModulation = readByteEE(shift + addrModulation); // читаем число модуляции
-	if (m_nModulation < minModulation || m_nModulation > maxModulation)
-		m_nModulation = defModulation;
 	setCurMode(a_nPrg); // читаем значение режима сварки
 	m_nPause = readByteEE(shift + addrPause); // читаем значение паузы между циклами сварки
 	if (m_nPause < MIN_PAUSE || m_nPause > MAX_PAUSE)

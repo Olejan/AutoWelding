@@ -32,22 +32,20 @@ __attribute__((section(".eeprom")))u8 unused_var = 0;
 __attribute__((section(".eeprom")))
 u8 eeMass[programNumber][paramNum] =
 {
-// {PrePressing,	Pressing,	Heating,	Forging,	Modulation,	Current,	Mode,			Pause}
-	{10,			3,			30,			30,			1,			1,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			2,			2,			SIMPLE_MODE,	DEF_PAUSE},
-	{123,			75,			10,			234,			3,			7,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			4,			4,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			5,			5,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			6,			6,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			7,			7,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			8,			8,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			9,			9,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			0,			0,			SIMPLE_MODE,	DEF_PAUSE}
+// {PrePressing,	Pressing,	Modulation,	Current,	Heating,	Forging,	Mode,			Pause}
+	{10,			11,			1,			0,			40,			50,			SIMPLE_MODE,	DEF_PAUSE},
+	{20,			21,			2,			9,			41,			51,			SIMPLE_MODE,	DEF_PAUSE},
+	{30,			31,			3,			8,			42,			52,			SIMPLE_MODE,	DEF_PAUSE},
+	{40,			41,			4,			7,			43,			53,			SIMPLE_MODE,	DEF_PAUSE},
+	{50,			51,			5,			6,			44,			54,			SIMPLE_MODE,	DEF_PAUSE},
+	{60,			61,			6,			5,			45,			55,			SIMPLE_MODE,	DEF_PAUSE},
+	{70,			71,			7,			4,			46,			56,			SIMPLE_MODE,	DEF_PAUSE},
+	{80,			81,			8,			3,			47,			57,			SIMPLE_MODE,	DEF_PAUSE},
+	{90,			91,			9,			2,			48,			58,			SIMPLE_MODE,	DEF_PAUSE},
+	{11,			21,			0,			1,			49,			59,			SIMPLE_MODE,	DEF_PAUSE}
 };
 __attribute__((section(".eeprom")))u8 ee_startprg = 2;
 __attribute__((section(".eeprom")))u8 ee_pedalnum = 2;
-//__attribute__((section(".eeprom")))u8 ee_mode = SIMPLE_MODE;
-//__attribute__((section(".eeprom")))u8 ee_pause = MAX_PAUSE;
 //=========================== строки меню ===========================
 const char PROGMEM
 	_Empty[]			= "                ",
@@ -96,8 +94,6 @@ const char PROGMEM
 	_ViewInfo1[]		= "АвтоСварка v0.5R",
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSimple[]		= "Режим Одиночный ",
-	//_ViewParams1[]		= "7 Н: 30 М:5 Т:3 ",
-	//_ViewParams2[]		= "Сж:450*30 Пр:110",
 	_ViewParams1[]		= "7 Сж:450*30 М:5 ",
 	_ViewParams2[]		= "Т:3 Н: 30 Пр:110",
 	_PrePressing[]		= "Предвар.Сж.   0 ",
@@ -429,9 +425,9 @@ void fParamForging()
 			break;
 			case keyRight:
 				if (curMode.get() == AUTO_MODE)
-				SetMenu(&mParamPause);
+					SetMenu(&mParamPause);
 				else
-				SetMenu(&mParamMode);
+					SetMenu(&mParamMode);
 			break;
 			case keyUp:
 				SetMenu(&mChoosePrgStngs);
@@ -767,7 +763,7 @@ void fEditCurrent()
 void fEditStartPrg()
 {
 	wdt_start(wdt_60ms);
-	u8 val = readByteEE(addrStartPrg);
+	u8 val = readByteEE((u16)&ee_startprg);
 	u8 oldVal = val;
 	if (val > lastPrg)
 	{
@@ -815,7 +811,7 @@ void fEditStartPrg()
 void fEditPedalNum()
 {
 	wdt_start(wdt_60ms);
-	u8 val = readByteEE(addrPedalNum);
+	u8 val = readByteEE((u16)&ee_pedalnum);
 	u8 oldVal = val;
 	if (val > maxPedalNum)
 	{
@@ -856,7 +852,7 @@ void fEditPedalNum()
 void fEditMode()
 {
 	wdt_start(wdt_60ms);
-	u8 val = readByteEE(curPrg.get() * paramNum + addrMode);
+	u8 val = readByteEE((u16)&eeMass + curPrg.get() * paramNum + addrMode);
 	u8 oldVal = val;
 	if (val > LAST_MODE)
 	{
@@ -897,7 +893,7 @@ void fEditMode()
 void fEditPause()
 {
 	wdt_start(wdt_60ms);
-	u8 val = readByteEE(curPrg.get() * paramNum + addrPause);
+	u8 val = readByteEE((u16)&eeMass + curPrg.get() * paramNum + addrPause);
 	u8 oldVal = val;
 	if (val > MAX_PAUSE || val < MIN_PAUSE)
 	{

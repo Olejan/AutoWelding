@@ -49,6 +49,8 @@ extern BOOL is_time_expired(u32 time);
 
 extern CURPRG curPrg;
 extern CURMODE curMode;
+extern u8 eeMass[programNumber][paramNum];
+
 static MenuItem* curMenu = &mPrograms;
 
 
@@ -201,7 +203,7 @@ void SetMenuData(u8 a_id)
 			if (curMode.get() == AUTO_MODE)
 			{
 				lcd_puts_p((const char *)_InfoAuto);
-				u8 tmp = readByteEE(curPrg.get() * paramNum + addrPause);
+				u8 tmp = readByteEE((u16)&eeMass + curPrg.get() * paramNum + addrPause);
 				Wr3Dec(tmp, 12, lcdstr2);
 			}
 			else

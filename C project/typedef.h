@@ -135,50 +135,51 @@ enum tagParams
 {
 	paramPrePressing	= 0,// предварительное сжатие !!! 1-й параметр должен быть равен 0 !!!
 	paramPressing,			// сжатие
-	paramHeating,			// нагрев
-	paramForging,			// проковка
 	paramModulation,		// полупериоды модуляции
 	paramCurrent,			// мощность тока
+	paramHeating,			// нагрев
+	paramForging,			// проковка
 	paramMode,				// режим сварки
 	paramPause,				// пауза между циклами сварки
 	paramNum,				// количество параметров !!! должен стоять сразу после последнего параметра !!!
 	cmnprmStartPrg,			// стартовая программа
 	cmnprmPedalNum,			// количество педалей
+	extremeParam = cmnprmPedalNum,	// крайний параметр
 
 	minPrePressing	= 0,
 	minPressing		= 1,
-	minHeating		= 1,
-	minForging		= 1,
 	minModulation	= 0,
 	minCurrent		= 0,
+	minHeating		= 1,
+	minForging		= 1,
 	MIN_PAUSE		= 1,
 
 	maxPrePressing	= 250,
 	maxPressing		= 99,
-	maxHeating		= 200,
-	maxForging		= 250,
 	maxModulation	= 9,
 	maxCurrent		= 9,
+	maxHeating		= 200,
+	maxForging		= 250,
 	MAX_PAUSE		= 250,
 
 	defPrePressing	= 30,
 	defPressing		= 3,
-	defHeating		= 50,
-	defForging		= 50,
 	defModulation	= 5,
 	defCurrent		= 5,
+	defHeating		= 50,
+	defForging		= 50,
 	DEF_PAUSE		= 7,
 };
 //!!// addr... и param... взаимозависимы, смотри welding.c GetValue()
 enum tagEEPROMAddr
 {
 	addrEmpty		= 0,
-	addrPrePressing	= 1, // предварительное сжатие
+	addrPrePressing	= 0,//1, // предварительное сжатие
 	addrPressing, // сжатие
-	addrHeating, // нагрев
-	addrForging, // проковка
 	addrModulation, // полупериоды модуляции
 	addrCurrent, // мощность тока
+	addrHeating, // нагрев
+	addrForging, // проковка
 	addrMode, // текущий режим
 	addrPause, // пауза между циклами сварки
 	addrStartPrg	= 1 + paramNum * programNumber,	// номер текущей программы (располагается за всеми программами)
