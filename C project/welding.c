@@ -71,6 +71,24 @@ void setCurMode(u8 a_nPrg)
 		m_nMode = SIMPLE_MODE;
 	switchModeHL(m_nMode);
 }
+//=============================== Pedals ===================================
+// Write here pedals functions
+//==========================================================================
+BOOL isPedal1Pressed()
+{
+	if (m_nPedalNum == 1 || m_nPrePressing == 0)
+		return isPedal2Pressed();
+	if(!(PINPEDAL1 & (1<<pinPedal1)))
+		return TRUE; // педаль предварительного сжатия нажата
+	return FALSE; // педаль предварительного сжатия отжата
+}
+BOOL isPedal2Pressed()
+{
+	if(!(PINPEDAL2 & (1<<pinPedal2)))
+		return TRUE; // педаль нажата
+	return FALSE; // педаль отжата
+}
+//==========================================================================
 
 //===================================================================
 // предварительное сжатие
