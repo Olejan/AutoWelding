@@ -52,6 +52,7 @@ const char PROGMEM
 #ifndef _RUSSIAN_VERSION_
 	_ViewInfo1[]		= "AutoWelding v0.5",
 	_InfoAuto[]			= "Auto (Pause    )",
+	_InfoSeam[]			= "Seam (Pause    )",
 	_InfoSimple[]		= " Mode is Simple ",
 	_ViewParams1[]		= "7 Pr:450*30 M:5 ",
 	_ViewParams2[]		= "I:3 H: 30 Fg:110",
@@ -78,8 +79,9 @@ const char PROGMEM
 	_PressingIs[]		= " Pressing is    ",
 	_HeatingIs[]		= " Heating is     ",
 	_ForgingIs[]		= " Forging is     ",
-	_Auto[]				= "  is Auto",
 	_Simple[]			= "is Simple",
+	_Auto[]				= "  is Auto",
+	_Seam[]				= "  is Seam",
 	_Running[]			= "       running! ",
 	_Ready[]			= "Ready! Push     ",
 	_ForWelding[]		= "  pedal for weld",
@@ -93,9 +95,10 @@ const char PROGMEM
 #else
 	_ViewInfo1[]		= "АвтоСварка v0.5R",
 	_InfoAuto[]			= "Цикл (Пауза    )",
+	_InfoSeam[]			= "Шов  (Пауза    )",
 	_InfoSimple[]		= "Режим Одиночный ",
-	_ViewParams1[]		= "7 Сж:450*30 М:5 ",
-	_ViewParams2[]		= "Т:3 Н: 30 Пр:110",
+	_ViewParams1[]		= "#7 Сж:150*30 М:9",
+	_ViewParams2[]		= "Т:3  Н:99 Пр:150",
 	_PrePressing[]		= "Предвар.Сж.   0 ",
 	_Pressing[]			= "Сжатие          ",
 	_Heating[]			= "Нагрев          ",
@@ -119,8 +122,9 @@ const char PROGMEM
 	_PressingIs[]		= " Сжатие         ",
 	_HeatingIs[]		= " Нагрев         ",
 	_ForgingIs[]		= " Проковка       ",
-	_Auto[]				= "   Цикл  ",
 	_Simple[]			= "Одиночный",
+	_Auto[]				= "   Цикл  ",
+	_Seam[]				= "  Шовный ",
 	_Running[]			= "    в процессе! ",
 	_Ready[]			= "Готово! Нажмите ",
 	_ForWelding[]		= "педальдля сварки",
@@ -249,7 +253,7 @@ void fChoosePrgStngs()
 				SetMenu(&mPrograms);
 			break;
 			case keyDown:
-				SetMenu(&mParamPrePressing);
+				SetMenu(&mParamMode);
 			break;
 		}
 	}
@@ -269,54 +273,6 @@ void fChooseCmnStngs()
 			break;
 			case keyDown:
 				SetMenu(&mCmnPrmStartPrg);
-			break;
-		}
-	}
-}
-void fParamMode()
-{
-	if (flags.scanKey)
-	{
-		switch(get_key())
-		{
-			case keyLeft:
-				if (curMode.get() == AUTO_MODE)
-					SetMenu(&mParamPause);
-				else
-					SetMenu(&mParamForging);
-			break;
-			case keyRight:
-				/*if (curMode.get() == AUTO_MODE)
-					SetMenu(&mParamPause);
-				else*/
-					SetMenu(&mParamPrePressing);
-			break;
-			case keyUp:
-				SetMenu(&mChoosePrgStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditMode);
-			break;
-		}
-	}
-}
-void fParamPause()
-{
-	if (flags.scanKey)
-	{
-		switch(get_key())
-		{
-			case keyLeft:
-				SetMenu(&mParamForging);
-			break;
-			case keyRight:
-				SetMenu(&mParamMode);
-			break;
-			case keyUp:
-				SetMenu(&mChoosePrgStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditPause);
 			break;
 		}
 	}
@@ -355,16 +311,37 @@ void fCmnPrmPedalNum()
 			break;
 		}
 }
+void fParamMode()
+{
+	if (flags.scanKey)
+	{
+		switch(get_key())
+		{
+			case keyLeft:
+				if (curMode.get() == SIMPLE_MODE)
+					SetMenu(&mParamForging);
+				else
+					SetMenu(&mParamPause);
+			break;
+			case keyRight:
+				SetMenu(&mParamPrePressing);
+			break;
+			case keyUp:
+				SetMenu(&mChoosePrgStngs);
+			break;
+			case keyDown:
+				SetMenu(&mEditMode);
+			break;
+		}
+	}
+}
 void fParamPrePressing()
 {
 	if (flags.scanKey)
 		switch(get_key())
 		{
 			case keyLeft:
-				/*if (curMode.get() == AUTO_MODE)
-					SetMenu(&mParamPause);
-				else*/
-					SetMenu(&mParamMode);
+				SetMenu(&mParamMode);
 			break;
 			case keyRight:
 				SetMenu(&mParamPressing);
@@ -396,6 +373,44 @@ void fParamPressing()
 			break;
 		}
 }
+void fParamModulation()
+{
+	if (flags.scanKey)
+	switch(get_key())
+	{
+		case keyLeft:
+		SetMenu(&mParamPressing);
+		break;
+		case keyRight:
+		SetMenu(&mParamCurrent);
+		break;
+		case keyUp:
+		SetMenu(&mChoosePrgStngs);
+		break;
+		case keyDown:
+		SetMenu(&mEditModulation);
+		break;
+	}
+}
+void fParamCurrent()
+{
+	if (flags.scanKey)
+	switch(get_key())
+	{
+		case keyLeft:
+		SetMenu(&mParamModulation);
+		break;
+		case keyRight:
+		SetMenu(&mParamHeating);
+		break;
+		case keyUp:
+		SetMenu(&mChoosePrgStngs);
+		break;
+		case keyDown:
+		SetMenu(&mEditCurrent);
+		break;
+	}
+}
 void fParamHeating()
 {
 	if (flags.scanKey)
@@ -405,7 +420,10 @@ void fParamHeating()
 				SetMenu(&mParamCurrent);
 			break;
 			case keyRight:
-				SetMenu(&mParamForging);
+				if (curMode.get() == SEAM_MODE)
+					SetMenu(&mParamPause);
+				else
+					SetMenu(&mParamForging);
 			break;
 			case keyUp:
 				SetMenu(&mChoosePrgStngs);
@@ -437,43 +455,29 @@ void fParamForging()
 			break;
 		}
 }
-void fParamModulation()
+void fParamPause()
 {
 	if (flags.scanKey)
+	{
 		switch(get_key())
 		{
 			case keyLeft:
-				SetMenu(&mParamPressing);
+				if (curMode.get() == SEAM_MODE)
+					SetMenu(&mParamHeating);
+				else
+					SetMenu(&mParamForging);
 			break;
 			case keyRight:
-				SetMenu(&mParamCurrent);
+				SetMenu(&mParamMode);
 			break;
 			case keyUp:
 				SetMenu(&mChoosePrgStngs);
 			break;
 			case keyDown:
-				SetMenu(&mEditModulation);
+				SetMenu(&mEditPause);
 			break;
 		}
-}
-void fParamCurrent()
-{
-	if (flags.scanKey)
-		switch(get_key())
-		{
-			case keyLeft:
-				SetMenu(&mParamModulation);
-			break;
-			case keyRight:
-				SetMenu(&mParamHeating);
-			break;
-			case keyUp:
-				SetMenu(&mChoosePrgStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditCurrent);
-			break;
-		}
+	}
 }
 void fEditPrePressing()
 {
@@ -867,11 +871,13 @@ void fEditMode()
 			switch(get_key())
 			{
 				case keyLeft:
-					val = SIMPLE_MODE;
+					if (val > FIRST_MODE)
+						val--;
 					UpdateLcdParam(paramMode, val);
 				break;
 				case keyRight:
-					val = AUTO_MODE;
+					if (val < LAST_MODE)
+						val++;
 					UpdateLcdParam(paramMode, val);
 				break;
 				case keyUp:
@@ -897,7 +903,7 @@ void fEditPause()
 	u8 oldVal = val;
 	if (val > MAX_PAUSE || val < MIN_PAUSE)
 	{
-		val = SIMPLE_MODE;
+		val = MIN_PAUSE;
 		UpdateLcdParam(paramPause, val);
 	}
 	while(1)

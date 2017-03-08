@@ -151,16 +151,16 @@ enum tagParams
 	minModulation	= 0,
 	minCurrent		= 0,
 	minHeating		= 1,
-	minForging		= 1,
+	minForging		= 0,
 	MIN_PAUSE		= 1,
 
-	maxPrePressing	= 250,
+	maxPrePressing	= 150,
 	maxPressing		= 99,
 	maxModulation	= 9,
 	maxCurrent		= 9,
-	maxHeating		= 200,
-	maxForging		= 250,
-	MAX_PAUSE		= 250,
+	maxHeating		= 99,
+	maxForging		= 150,
+	MAX_PAUSE		= 150,
 
 	defPrePressing	= 30,
 	defPressing		= 3,
@@ -263,9 +263,11 @@ enum tagIds
 
 enum tagMode
 {
-	AUTO_MODE	= 0,
-	SIMPLE_MODE,
-	LAST_MODE = SIMPLE_MODE,
+	FIRST_MODE = 0,
+	SIMPLE_MODE	= FIRST_MODE,
+	AUTO_MODE,
+	SEAM_MODE,
+	LAST_MODE = SEAM_MODE,
 	
 	WELD_IS_RUNNIG,
 	SIMPLE_WELD_HAS_DONE,

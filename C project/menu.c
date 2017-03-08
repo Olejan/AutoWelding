@@ -3,8 +3,9 @@
 
 extern const u8
 	_Empty[],
-	_InfoAuto[],
 	_InfoSimple[],
+	_InfoAuto[],
+	_InfoSeam[],
 	_ViewParams1[],
 	_ViewParams2[],
 	_PrePressing[],
@@ -25,8 +26,9 @@ extern const u8
 	_HeatingIs[],
 	_ForgingIs[],
 	_Running[],
-	_Auto[],
 	_Simple[],
+	_Auto[],
+	_Seam[],
 	_Pause_[];
 
 
@@ -103,6 +105,8 @@ void UpdateLcdParam(u8 a_ParamsId, u8 a_nVal)
 				lcd_puts_p((const char *)_Simple);
 			else if (a_nVal == AUTO_MODE)
 				lcd_puts_p((const char *)_Auto);
+			else if (a_nVal == SEAM_MODE)
+				lcd_puts_p((const char *)_Seam);
 			break;
 		case cmnprmStartPrg:
 		case cmnprmPedalNum:
@@ -200,14 +204,18 @@ void SetMenuData(u8 a_id)
 	{
 		case idInfo:
 			lcd_gotoxy(0, lcdstr2);
-			if (curMode.get() == AUTO_MODE)
+			u8 mode = curMode.get();
+			if (mode == SIMPLE_MODE)
+				lcd_puts_p((const char *)_InfoSimple);
+			else
 			{
-				lcd_puts_p((const char *)_InfoAuto);
+				if (mode == AUTO_MODE)
+					lcd_puts_p((const char *)_InfoAuto);
+				else
+					lcd_puts_p((const char *)_InfoSeam);
 				u8 tmp = readByteEE((u16)&eeMass + curPrg.get() * paramNum + addrPause);
 				Wr3Dec(tmp, 12, lcdstr2);
 			}
-			else
-				lcd_puts_p((const char *)_InfoSimple);
 			break;
 		case idPrograms:
 			UpdateParams(); // обновл€ю данные программы на экране
