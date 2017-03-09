@@ -31,6 +31,15 @@ extern u8 getCurMenuId();
 extern u8 get_key();
 extern void SetMenu(const MenuItem* a_curMenu);
 extern MenuItem mPrograms;
+extern MenuItem mParamMode;
+extern MenuItem mParamPause;
+extern MenuItem mParamPrePressing;
+extern MenuItem mParamPressing;
+extern MenuItem mParamHeating;
+extern MenuItem mParamForging;
+extern MenuItem mParamModulation;
+extern MenuItem mParamCurrent;
+
 extern void setParamsFromEE();
 extern void switchValve1(u8 state);
 extern void switchValve2(u8 state);
@@ -263,7 +272,13 @@ int main()
 	{
 		wdt_feed();
 		DoMenu();
-		if (isPedal1Pressed() == TRUE && (getCurMenuId() == idPrograms)) // если нажата педаль и активное меню - "Программы"
+		u8 menu = getCurMenuId();
+		if (isPedal1Pressed() == TRUE // если нажата педаль
+			&& (
+					menu == idPrograms // и активное меню - "Программы" или меню выбора параметров
+					|| (menu >= idBeginChooseParams && menu <= idEndChooseParams)
+				)
+			)
 		{
 			StartTaskWelding();
 			while(isPedal1Pressed())
@@ -274,7 +289,21 @@ int main()
 				wdt_feed();
 			}
 			StopTaskWelding();
-			SetMenu(&mPrograms);
+			const MenuItem * addr;
+			switch (menu)
+			{
+				case idPrograms: addr = &mPrograms; break;
+				case idChooseMode: addr = &mParamMode; break;
+				case idChoosePause: addr = &mParamPause; break;
+				case idChoosePrePressing: addr = &mParamPrePressing; break;
+				case idChoosePressing: addr = &mParamPressing; break;
+				case idChooseHeating: addr = &mParamHeating; break;
+				case idChooseForging: addr = &mParamForging; break;
+				case idChooseModulation: addr = &mParamModulation; break;
+				case idChooseCurrent: addr = &mParamCurrent; break;
+				default: addr = &mPrograms; break;		
+			}
+			SetMenu(addr);
 		}
 	}
 	return 0;

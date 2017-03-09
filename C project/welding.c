@@ -44,10 +44,7 @@ static u8 m_nPause = MAX_PAUSE;
 static u8 m_nCurPrg = 0; // текущая программа
 static u8 m_nPedalNum = 2; // количество педалей
 
-static u8 m_TaskWelding_State = 0; // состояние задачи сварки
-//static u8 P2cntHigh;	// кол-во зафиксированных состояний педали 2 в высоком уровне
-//static u8 P2cntLow;		// кол-во зафиксированных состояний педали 2 в низком уровне
-//static u8 P2state;		
+static u8 m_TaskWelding_State = 0; // состояние задачи сварки		
 //===================================================================
 // Prototypes
 //==================================================================
@@ -433,7 +430,6 @@ u8 DoWelding()
 {
 	if (isPedal2Pressed())
 	{
-		//P2cntLow = 0;
 		u8 res = doPressing(); // прижим сварных деталей
 		if (res == FALSE) return WELD_HAS_BROKEN;
 		res = doHeating(); // нагрев
@@ -531,7 +527,24 @@ u8 TaskWelding()
 void UpdateParams()
 {
 	initPrgParams(m_nCurPrg);
-	Wr1Dec(m_nCurPrg, 1, lcdstr1); // текущая программа
+	char ch = ' ';
+#ifdef _RUSSIAN_VERSION_
+	if (m_nMode == SIMPLE_MODE)
+		ch = 'О';
+	else if (m_nMode == AUTO_MODE)
+		ch = 'Ц';
+	else if (m_nMode == SEAM_MODE)
+		ch = 'Ш';
+#else
+	if (m_nMode == SIMPLE_MODE)
+		ch = 'S';
+	else if (m_nMode == AUTO_MODE)
+		ch = 'C';
+	else if (m_nMode == SEAM_MODE)
+		ch = 'E';
+#endif // _RUSSIAN_VERSION_
+	Wr1Dec(m_nCurPrg, 0, lcdstr1); // текущая программа
+	WrChar(ch, 1, lcdstr1); // текущий режим
 	Wr3Dec(m_nPrePressing, 6, lcdstr1); // число предварительного сжатия
 	WrDec(m_nPressing, 10, lcdstr1); // число сжатия
 	Wr1Dec(m_nModulation, 15, lcdstr1); // число модуляции
