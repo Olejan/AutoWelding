@@ -160,7 +160,7 @@ u8 doPressing()
 			break;
 		while(!flags.halfPeriod)
 		{
-			if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+			if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
 				return FALSE;
 		}
 		flags.halfPeriod = 0;
@@ -177,7 +177,7 @@ void impulse()
 	while(!flags.halfPeriod)
 #endif
 	{
-		if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+		if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
 			break; // если педали отпустили - значит аварийная остановка
 		switchTrans(ON); // включаем трансформатор
 		if (!wait_100us()) // если прерывания на int0 не было
@@ -222,7 +222,7 @@ u8 doModulation()
 	{
 		while(!flags.halfPeriod) // и ждём передний фронт
 		{
-			if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+			if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
 			{
 				switchHL(pinHeatingHL, OFF);
 				return FALSE;
@@ -240,7 +240,7 @@ u8 doModulation()
 		wdt_feed();
 		while(flags.T1IsUp == 0 && flags.transswitchoff == 0)
 		{
-			if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+			if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
 			{
 				switchHL(pinHeatingHL, OFF);
 				TCCR1B = 0;
@@ -283,7 +283,7 @@ u8 doHeating()
 	u8 heating = m_nHeating << 1;// делаю полупериоды из периодов
 	while(!flags.halfPeriod) // ждём прерывание int0
 	{
-		if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+		if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
 		{
 			switchHL(pinHeatingHL, OFF);
 			return FALSE;
@@ -311,7 +311,7 @@ u8 doHeating()
 		{
 			while(flags.T1IsUp == 0 && flags.transswitchoff == 0)
 			{
-				if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+				if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
 				{
 					switchHL(pinHeatingHL, OFF);
 					TCCR1B = 0;
@@ -335,7 +335,7 @@ u8 doHeating()
 		}
 		while(!flags.halfPeriod) // ждём передний фронт после выключения транса по заднему фронту
 		{
-			if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+			if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
 			{
 				switchHL(pinHeatingHL, OFF);
 				return FALSE;
@@ -372,7 +372,7 @@ u8 doForging()
 			break;
 		while(!flags.halfPeriod)
 		{
-			if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+			if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
 			{
 				switchValve2(OFF);
 				switchHL(pinForgingHL, OFF);
@@ -411,7 +411,7 @@ void doPause()
 			break;
 		while(!flags.halfPeriod)
 		{
-			if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+			if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
 			{
 				switchHL(pinPauseHL, OFF);
 				WriteWeldReadiness();
@@ -423,7 +423,7 @@ void doPause()
 	}
 	switchHL(pinPauseHL, OFF);
 	if (isPedal2Pressed() == FALSE)
-	WriteWeldReadiness();	// готовность к сварке на экран
+		WriteWeldReadiness();	// готовность к сварке на экран
 }
 
 u8 DoWelding()
@@ -507,7 +507,7 @@ u8 TaskWelding()
 		case 2:
 			return DoWelding();
 		case 3:
-			if (isPedal1Pressed())
+			if (isPedal2Pressed())
 			{
 				res = doPressing();
 				if (res == FALSE)

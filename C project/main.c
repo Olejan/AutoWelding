@@ -258,7 +258,7 @@ void init()
 #endif
 	//init_lcd_simbols();
 //#ifdef _DEMO_VERSION_
-	SplashScreen();
+	//SplashScreen();
 //#endif // _DEMO_VERSION_
 #endif // _DEBUG_
 	SetMenu(&mPrograms);

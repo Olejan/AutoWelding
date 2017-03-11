@@ -93,7 +93,7 @@ const char PROGMEM
 	_SignalAbscent[]	= "Synchronization ",
 	_Synch[]			= "      is absent!";
 #else
-	_ViewInfo1[]		= "АвтоСварка v0.5R",
+	_ViewInfo1[]		= "Версия 11.03.17R",
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSeam[]			= "Шов  (Пауза    )",
 	_InfoSimple[]		= "Режим Одиночный ",
@@ -817,7 +817,7 @@ void fEditPedalNum()
 	wdt_start(wdt_60ms);
 	u8 val = readByteEE((u16)&ee_pedalnum);
 	u8 oldVal = val;
-	if (val > maxPedalNum)
+	if (val < minPedalNum || val > maxPedalNum)
 	{
 		val = minPedalNum;
 		UpdateLcdParam(cmnprmPedalNum, val);
