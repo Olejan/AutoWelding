@@ -24,6 +24,10 @@ static u8 get_key_code(void)
 	u8 buf;
 	buf = ~PINBUTTONS;
 	buf >>= 2;
+	/*if (!(PIND & (1 << 4)))// PIND.0 - кнопка ¬верх
+		buf |= 1;
+	else
+		buf &= ~1;*/
 	/*if (!(PINB & (1 << 0)))
 		buf |= 1 << 3;*/
 

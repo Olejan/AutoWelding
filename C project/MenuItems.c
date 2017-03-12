@@ -93,7 +93,7 @@ const char PROGMEM
 	_SignalAbscent[]	= "Synchronization ",
 	_Synch[]			= "      is absent!";
 #else
-	_ViewInfo1[]		= "Версия 11.03.17R",
+	_ViewInfo1[]		= "Версия 12.03.17R",
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSeam[]			= "Шов  (Пауза    )",
 	_InfoSimple[]		= "Режим Одиночный ",

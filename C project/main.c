@@ -21,7 +21,6 @@ volatile u32 waitTime; // декриментируемый счётчик для
 volatile u8 couScanKeys; // счётчик для сканирования кнопок
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 volatile u8 syncpresent = SYNC_NUM; // детектор пропадания синхроимпульса - если == 0, значит синхроимпульс пропал.
-static u8 _backfront = 0;
 #endif
 volatile tagFlags flags;
 //=========================================================================
@@ -92,38 +91,35 @@ ISR (TIMER1_OVF_vect)
 
 ISR (INT0_vect) // прерывание по синхроимпульсу
 {
-	/*PORTLED ^= 1 << pinHeatingHL;
-	return;*/
+	MCUCR ^= 1<<ISC00; // следующее прерывание по другому фронту
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	syncpresent = SYNC_NUM; // обновляю
 #endif
-	//pulsCnt++;
 	// можно здесь запускать таймер на время включения диода до 0, а в процедуре обработки прерывания таймера отключать его и устанавливать флаг flags.halfPeriod = 1
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
-	if(flags.syncfront == _backfront) // если задний фронт
+	if (MCUCR & (1<<ISC00)) // если задний фронт (ранее изменил фронт срабатывания, поэтому смотрю другое значение бита)
 	{
+		flags.syncfront = 0;
 		PORTTRANS |= 1<<pinTrans; // отключаем трансформатор 
 		flags.transswitchoff = 1;
 	}
 	else
 	{
+		flags.syncfront = 1;
 		flags.halfPeriod = 1;
-		//PORTTRANS &= ~(1<<pinTrans);
 		if(flags.useT1forHeating == 1)
 		{
 			TCNT1 = _TCNT1;
 			TCCR1B = 1; // включаю T1
 		}
 	}
-	flags.syncfront ^= 1;
 #else
 	flags.halfPeriod = 1;
 #endif
-	//PORTTRANS ^= 1<<pinTrans;
 }
 
 ISR (INT1_vect)
-{//return;
+{
 	if (flags.currentIsEnable == 1)// если ток был разрешён
 	{// запрещаем его
 		flags.currentIsEnable = 0; // запрещаю ток
@@ -162,7 +158,6 @@ void initProc()
 	TCNT1L = 0x70;
 	//TCCR1B = 1;//<<CS10;
 
-	// INT0
 	MCUCR = (2 << ISC10); // int1 по заднему фронту (кнопка)
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	MCUCR |= (1 << ISC00); // int0 по любому фронту (синхроимпульс)
@@ -195,53 +190,37 @@ void initVars()
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 extern const char _SignalAbscent[], _Synch[], _Empty[];
 extern void WriteMessage(const char* str1, const char* str2);
-// Узнаём, какой фронт задний по разнице между прерываниями, и фиксируем это
-void initFronts()
+void CheckSynchroImpulse()
 {
 	wdt_start(wdt_1s);
-	begin:
-	if(syncpresent == 0)
+	u8 _tm, cnt;
+	st:
+	_tm = 10;
+	cnt = 0;
+	while(_tm > 0) // выжидаю первые 10 импульсов
 	{
-		WriteMessage(_SignalAbscent, _Synch);
-		_delay_ms(500);
-		wdt_feed();
-		WriteMessage(_Empty, _Empty);
-		_delay_ms(500);
-		wdt_feed();
-		goto begin;
+		flags.syncfront = 0;
+		while(flags.syncfront == 0)
+		{
+			if(syncpresent == 0 || cnt > 150)
+			{
+				
+				while (syncpresent == 0)
+				{
+					WriteMessage(_SignalAbscent, _Synch);
+					_delay_ms(500);
+					wdt_feed();
+					WriteMessage(_Empty, _Empty);
+					_delay_ms(500);
+				}
+				goto st;
+			}
+			_delay_us(100);
+			cnt++;
+		}
+		_tm--;
+		cnt = 0;
 	}
-	u32 first = 0;
-	u32 second = 0;
-	flags.syncfront = 0;
-	while(flags.syncfront == 0)
-	{
-		if(syncpresent == 0)
-			goto begin;
-	}
-	flags.syncfront = 0;
-	while(flags.syncfront == 0 && syncpresent)
-	{
-		_delay_us(1);
-		first++;
-	}
-	if(syncpresent == 0)
-		goto begin;
-	flags.syncfront = 0;
-	while(flags.syncfront == 0 && syncpresent)
-	{
-		_delay_us(1);
-		second++;
-	}
-	if(syncpresent == 0)
-		goto begin;
-	flags.halfPeriod = 0;
-	flags.transswitchoff = 0;
-	//while(flags.halfPeriod == 0 || flags.transswitchoff == 0){}
-	if(first > second)
-		_backfront = 1;
-	else
-		_backfront = 0;
-	wdt_start(wdt_250ms);
 }
 #endif
 void init()
@@ -254,7 +233,7 @@ void init()
 #ifndef _DEBUG_
 	lcd_init(LCD_DISP_ON);
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
-	initFronts();
+	CheckSynchroImpulse();                                          
 #endif
 	//init_lcd_simbols();
 //#ifdef _DEMO_VERSION_

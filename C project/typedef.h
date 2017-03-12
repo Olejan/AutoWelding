@@ -74,7 +74,7 @@ enum tag
 {
 	OFF,
 	ON,
-	pinTrans	= 0, // PORTD.0
+	pinTrans	= 6,// PORTD, // PORTD.0
 	pinValve1	= 0, // PORTB.0
 	pinValve2	= 1, // PORTB.1
 	pinPedal1	= 6, // PORTB.6
