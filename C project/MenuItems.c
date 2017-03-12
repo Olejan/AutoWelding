@@ -50,11 +50,11 @@ __attribute__((section(".eeprom")))u8 ee_pedalnum = 2;
 const char PROGMEM
 	_Empty[]			= "                ",
 #ifndef _RUSSIAN_VERSION_
-	_ViewInfo1[]		= "AutoWelding v0.5",
+	_ViewInfo1[]		= "Version 13.03.17",
 	_InfoAuto[]			= "Auto (Pause    )",
-	_InfoSeam[]			= "Seam (Pause    )",
-	_InfoSimple[]		= " Mode is Simple ",
-	_ViewParams1[]		= "7 Pr:450*30 M:5 ",
+	_InfoSeam[]			= "Mode is Seam    ",
+	_InfoSimple[]		= "Mode is Simple  ",
+	_ViewParams1[]		= "S7 Pr:450*30 M:5",
 	_ViewParams2[]		= "I:3 H: 30 Fg:110",
 	_PrePressing[]		= "PrePressing   0 ",
 	_Pressing[]			= "Pressing        ",
@@ -93,13 +93,13 @@ const char PROGMEM
 	_SignalAbscent[]	= "Synchronization ",
 	_Synch[]			= "      is absent!";
 #else
-	_ViewInfo1[]		= "Версия 12.03.17R",
+	_ViewInfo1[]		= "Версия 13.03.17R",
 	_InfoAuto[]			= "Цикл (Пауза    )",
-	_InfoSeam[]			= "Шов  (Пауза    )",
+	_InfoSeam[]			= "Режим Шовный    ",
 	_InfoSimple[]		= "Режим Одиночный ",
-	_ViewParams1[]		= "#7 Сж:150*30 М:9",
-	_ViewParams2[]		= "Т:3  Н:99 Пр:150",
-	_PrePressing[]		= "Предвар.Сж.   0 ",
+	_ViewParams1[]		= "Ш7 С:150*150 М:9",
+	_ViewParams2[]		= "Т:3 Н:150 Пр:150",
+	_PrePressing[]		= "Предсжатие      ",
 	_Pressing[]			= "Сжатие          ",
 	_Heating[]			= "Нагрев          ",
 	_Modulation[]		= "Модуляция       ",
@@ -145,25 +145,25 @@ const MenuItem
 	mPrograms			PROGMEM = { idPrograms,			_ViewParams1,	_ViewParams2,	fPrograms },
 	mChoosePrgStngs		PROGMEM = { idChoosePrgStngs,	_ChooseMenu,	_ProgramStngs,	fChoosePrgStngs },
 	mChooseCmnStngs		PROGMEM = { idChooseCmnStngs,	_ChooseMenu,	_CommonStngs,	fChooseCmnStngs },
-	mParamMode			PROGMEM = { idChooseMode,		_ChooseParam,	_Mode,			fParamMode },
-	mParamPause			PROGMEM = { idChoosePause,		_ChooseParam,	_Pause,			fParamPause },
 	mCmnPrmStartPrg		PROGMEM = { idChooseStartPrg,	_CommonStngs,	_StartPrg,		fCmnPrmStartPrg },
 	mCmnPrmPedalNum		PROGMEM = { idChoosePedalNum,	_CommonStngs,	_PedalNum,		fCmnPrmPedalNum },
+	mParamMode			PROGMEM = { idChooseMode,		_ChooseParam,	_Mode,			fParamMode },
 	mParamPrePressing	PROGMEM = { idChoosePrePressing,_ChooseParam,	_PrePressing,	fParamPrePressing },
 	mParamPressing		PROGMEM = { idChoosePressing,	_ChooseParam,	_Pressing,		fParamPressing },
-	mParamHeating		PROGMEM = { idChooseHeating,	_ChooseParam,	_Heating,		fParamHeating },
-	mParamForging		PROGMEM = { idChooseForging,	_ChooseParam,	_Forging,		fParamForging },
 	mParamModulation	PROGMEM = { idChooseModulation,	_ChooseParam,	_Modulation,	fParamModulation },
 	mParamCurrent		PROGMEM = { idChooseCurrent,	_ChooseParam,	_Current,		fParamCurrent },
-	mEditPrePressing	PROGMEM = { idEditPrePressing,	_Editing,		_PrePressing,	fEditPrePressing },
-	mEditPressing		PROGMEM = { idEditPressing,		_Editing,		_Pressing,		fEditPressing },
-	mEditHeating		PROGMEM = { idEditHeating,		_Editing,		_Heating,		fEditHeating },
-	mEditForging		PROGMEM = { idEditForging,		_Editing,		_Forging,		fEditForging },
-	mEditModulation		PROGMEM = { idEditModulation,	_Editing,		_Modulation,	fEditModulation },
-	mEditCurrent		PROGMEM = { idEditCurrent,		_Editing, 		_Current,		fEditCurrent },
+	mParamHeating		PROGMEM = { idChooseHeating,	_ChooseParam,	_Heating,		fParamHeating },
+	mParamForging		PROGMEM = { idChooseForging,	_ChooseParam,	_Forging,		fParamForging },
+	mParamPause			PROGMEM = { idChoosePause,		_ChooseParam,	_Pause,			fParamPause },
 	mEditStartPrg		PROGMEM = { idEditStartPrg,		_Editing, 		_StartPrg,		fEditStartPrg },
 	mEditPedalNum		PROGMEM = { idEditPedalNum,		_Editing, 		_PedalNum,		fEditPedalNum },
 	mEditMode			PROGMEM = { idEditMode,			_Editing,		_Mode,			fEditMode },
+	mEditPrePressing	PROGMEM = { idEditPrePressing,	_Editing,		_PrePressing,	fEditPrePressing },
+	mEditPressing		PROGMEM = { idEditPressing,		_Editing,		_Pressing,		fEditPressing },
+	mEditModulation		PROGMEM = { idEditModulation,	_Editing,		_Modulation,	fEditModulation },
+	mEditCurrent		PROGMEM = { idEditCurrent,		_Editing, 		_Current,		fEditCurrent },
+	mEditHeating		PROGMEM = { idEditHeating,		_Editing,		_Heating,		fEditHeating },
+	mEditForging		PROGMEM = { idEditForging,		_Editing,		_Forging,		fEditForging },
 	mEditPause			PROGMEM = { idEditPause,		_Editing,		_Pause,			fEditPause };
 
 //====================== глобальные переменные ======================
@@ -318,10 +318,10 @@ void fParamMode()
 		switch(get_key())
 		{
 			case keyLeft:
-				if (curMode.get() == SIMPLE_MODE)
-					SetMenu(&mParamForging);
-				else
+				if (curMode.get() == AUTO_MODE)
 					SetMenu(&mParamPause);
+				else
+					SetMenu(&mParamForging);
 			break;
 			case keyRight:
 				SetMenu(&mParamPrePressing);
@@ -420,10 +420,7 @@ void fParamHeating()
 				SetMenu(&mParamCurrent);
 			break;
 			case keyRight:
-				if (curMode.get() == SEAM_MODE)
-					SetMenu(&mParamPause);
-				else
-					SetMenu(&mParamForging);
+				SetMenu(&mParamForging);
 			break;
 			case keyUp:
 				SetMenu(&mChoosePrgStngs);
@@ -462,10 +459,7 @@ void fParamPause()
 		switch(get_key())
 		{
 			case keyLeft:
-				if (curMode.get() == SEAM_MODE)
-					SetMenu(&mParamHeating);
-				else
-					SetMenu(&mParamForging);
+				SetMenu(&mParamForging);
 			break;
 			case keyRight:
 				SetMenu(&mParamMode);

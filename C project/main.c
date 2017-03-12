@@ -91,12 +91,10 @@ ISR (TIMER1_OVF_vect)
 
 ISR (INT0_vect) // прерывание по синхроимпульсу
 {
+#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	MCUCR ^= 1<<ISC00; // следующее прерывание по другому фронту
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	syncpresent = SYNC_NUM; // обновляю
-#endif
 	// можно здесь запускать таймер на время включения диода до 0, а в процедуре обработки прерывания таймера отключать его и устанавливать флаг flags.halfPeriod = 1
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	if (MCUCR & (1<<ISC00)) // если задний фронт (ранее изменил фронт срабатывания, поэтому смотрю другое значение бита)
 	{
 		flags.syncfront = 0;
@@ -166,7 +164,7 @@ void initProc()
 #endif
 	GICR = (1 << INT0) | (1 << INT1); // разрешаю внешние прерывания
 
-	SFIOR |= 1 << PUD; // отключаю внутреннюю подтяжку портов
+	//SFIOR |= 1 << PUD; // отключаю внутреннюю подтяжку портов
 	DDRTRANS |= 1<<pinTrans;
 	PORTTRANS |= 1<<pinTrans;
 	DDRVALVE1 |= 1<<pinValve1;
@@ -175,6 +173,7 @@ void initProc()
 	PORTVALVE2 |= 1<<pinValve2;
 	DDRLED = 0xff;
 	PORTLED = ALL_LEDS_OFF; // выключить все светодиоды
+	PORTBUTTONS |= 0xf<<2; // устанавливаю подтягивающие резисторы
 	
 	GICR |= 1<<INT0; // включение INT0
 	asm("sei");
@@ -207,6 +206,7 @@ void CheckSynchroImpulse()
 				
 				while (syncpresent == 0)
 				{
+					wdt_feed();
 					WriteMessage(_SignalAbscent, _Synch);
 					_delay_ms(500);
 					wdt_feed();
@@ -262,9 +262,7 @@ int main()
 			StartTaskWelding();
 			while(isPedal1Pressed())
 			{
-				u8 res = TaskWelding();
-				if (res == WELD_HAS_BROKEN)
-					break;
+				/*u8 res = */TaskWelding();
 				wdt_feed();
 			}
 			StopTaskWelding();

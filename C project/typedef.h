@@ -155,10 +155,10 @@ enum tagParams
 	MIN_PAUSE		= 1,
 
 	maxPrePressing	= 150,
-	maxPressing		= 99,
+	maxPressing		= 150,
 	maxModulation	= 9,
 	maxCurrent		= 9,
-	maxHeating		= 99,
+	maxHeating		= 150,
 	maxForging		= 150,
 	MAX_PAUSE		= 150,
 
@@ -274,6 +274,7 @@ enum tagMode
 	WELD_IS_RUNNIG,
 	SIMPLE_WELD_HAS_DONE,
 	WELD_HAS_BROKEN,
+	WELD_IS_PAUSED,
 };
 
 typedef struct PROGMEM

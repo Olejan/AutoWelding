@@ -133,7 +133,7 @@ u8 doPrePressing()
 u8 doPressing()
 {
 	BOOL bToWrite = FALSE;
-	u8 pressing = m_nPressing << 1; // значение времени сжати€
+	u16 pressing = (u16)m_nPressing << 1; // значение времени сжати€
 	u8 towrite = m_nPressing; // значение дл€ вывода на экран
 	wdt_start(wdt_60ms);
 	if (pressing)
@@ -146,13 +146,14 @@ u8 doPressing()
 		switchValve2(ON); // включаю клапан
 	}
 	else return TRUE;
+	flags.halfPeriod = 0;
 	while(1)
 	{
 		if (bToWrite)
 		{
 			if (!(pressing & (1 << 0)))
 			{
-				WrDec(towrite, 14, lcdstr1); // отправл€ю туда значение сжати€
+				Wr3Dec(towrite, 13, lcdstr1); // отправл€ю туда значение сжати€
 				towrite--;
 			}
 		}
@@ -280,7 +281,7 @@ u8 doHeating()
 	u8 res = doModulation();
 	if (res == FALSE) return FALSE;
 	wdt_start(wdt_60ms);
-	u8 heating = m_nHeating << 1;// делаю полупериоды из периодов
+	u16 heating = (u16)m_nHeating << 1;// делаю полупериоды из периодов
 	while(!flags.halfPeriod) // ждЄм прерывание int0
 	{
 		if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
@@ -374,7 +375,6 @@ u8 doForging()
 		{
 			if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
 			{
-				switchValve2(OFF);
 				switchHL(pinForgingHL, OFF);
 				return FALSE;
 			}
@@ -382,12 +382,11 @@ u8 doForging()
 		flags.halfPeriod = 0;
 		wdt_feed();
 	}
-	switchValve2(OFF);
 	switchHL(pinForgingHL, OFF);
 	return TRUE;
 }
 
-void doPause()
+u8 doPause()
 {
 	BOOL bToWrite = FALSE;
 	wdt_start(wdt_60ms);
@@ -415,7 +414,7 @@ void doPause()
 			{
 				switchHL(pinPauseHL, OFF);
 				WriteWeldReadiness();
-				return;
+				return FALSE;
 			}
 		}
 		flags.halfPeriod = 0;
@@ -424,6 +423,16 @@ void doPause()
 	switchHL(pinPauseHL, OFF);
 	if (isPedal2Pressed() == FALSE)
 		WriteWeldReadiness();	// готовность к сварке на экран
+	return TRUE;
+}
+
+u8 GetWeldingState()
+{
+	if (isPedal1Pressed() == FALSE)
+		return WELD_HAS_BROKEN;
+	if (isPedal2Pressed() == FALSE)
+		return WELD_IS_PAUSED;
+	return WELD_IS_RUNNIG;
 }
 
 u8 DoWelding()
@@ -431,12 +440,17 @@ u8 DoWelding()
 	if (isPedal2Pressed())
 	{
 		u8 res = doPressing(); // прижим сварных деталей
-		if (res == FALSE) return WELD_HAS_BROKEN;
+		if (res == FALSE)
+			return GetWeldingState();
 		res = doHeating(); // нагрев
 		flags.useT1forHeating = 0;
-		if (res == FALSE) return WELD_HAS_BROKEN;
+		if (res == FALSE)
+			return GetWeldingState();
 		res = doForging(); // проковка сварной точки
-		if (res == FALSE) return WELD_HAS_BROKEN;
+		switchValve2(OFF);
+		switchHL(pinForgingHL, OFF);
+		if (res == FALSE)
+			return GetWeldingState();
 		if (m_nMode == SIMPLE_MODE)
 		{
 			setScreen(scrWeldingCompleted);
@@ -448,6 +462,8 @@ u8 DoWelding()
 					_delay_ms(5);	// защита от дребезга контактов. Ѕез этой строки при отпускании педали 2 мог возникнуть повторный цикл сварки
 					return SIMPLE_WELD_HAS_DONE;
 				}
+				if (isPedal1Pressed() == FALSE)
+					return GetWeldingState();
 				wdt_feed();
 			}
 		}
@@ -462,8 +478,11 @@ u8 DoSeamWelding()
 	{
 		u8 res = doHeating(); // нагрев
 		flags.useT1forHeating = 0;
-		if (res == FALSE) return WELD_HAS_BROKEN;
-		doPause(); // пауза между циклами сварки
+		if (res == FALSE)
+			return GetWeldingState();
+		res = doForging(); // проковка сварной точки
+		if (res == FALSE)
+			return GetWeldingState();
 	}
 	return WELD_IS_RUNNIG;
 }
@@ -477,8 +496,8 @@ void StopTaskWelding()
 	//setScreen(scrWeldingCompleted);
 	m_TaskWelding_State = 0;
 	switchTrans(OFF);
-	switchValve1(OFF);
 	switchValve2(OFF);
+	switchValve1(OFF);
 }
 u8 TaskWelding()
 {
@@ -499,13 +518,22 @@ u8 TaskWelding()
 					break;
 				WriteWeldReadiness();	// готовность к сварке на экран
 				if (m_nMode == SEAM_MODE)
-					m_TaskWelding_State += 2;
+					m_TaskWelding_State = 3;
 				else
-					m_TaskWelding_State++;
+					m_TaskWelding_State = 2;
 			}
 			break;
 		case 2:
-			return DoWelding();
+			res = DoWelding();
+			if (res != WELD_IS_RUNNIG)
+			{
+				switchValve2(OFF);
+			}
+			if (res == WELD_IS_PAUSED)
+			{
+				WriteWeldReadiness();	// готовность к сварке на экран
+			}
+			break;
 		case 3:
 			if (isPedal2Pressed())
 			{
@@ -514,8 +542,19 @@ u8 TaskWelding()
 					break;
 				m_TaskWelding_State++;
 			}
+			break;
 		case 4:
-			return DoSeamWelding();
+			res = DoSeamWelding();
+			if (res != WELD_IS_RUNNIG)
+			{
+				switchValve2(OFF);
+				m_TaskWelding_State--;
+			}
+			if (res == WELD_IS_PAUSED)
+			{
+				WriteWeldReadiness();
+			}
+			break;
 	}
 	return WELD_IS_RUNNIG;
 }
@@ -543,13 +582,40 @@ void UpdateParams()
 	else if (m_nMode == SEAM_MODE)
 		ch = 'E';
 #endif // _RUSSIAN_VERSION_
-	Wr1Dec(m_nCurPrg, 0, lcdstr1); // текуща€ программа
-	WrChar(ch, 1, lcdstr1); // текущий режим
-	Wr3Dec(m_nPrePressing, 6, lcdstr1); // число предварительного сжати€
-	WrDec(m_nPressing, 10, lcdstr1); // число сжати€
+	WrChar(ch, 0, lcdstr1); // текущий режим
+	Wr1Dec(m_nCurPrg, 1, lcdstr1); // текуща€ программа
+	if(m_nPrePressing < 100 || m_nPressing < 100)
+	{
+#ifdef _RUSSIAN_VERSION_
+		WrChar('ж', 4, lcdstr1);
+#else
+		WrChar('r', 4, lcdstr1);
+#endif
+		WrChar(':', 5, lcdstr1);
+		if(m_nPrePressing < 99)
+		{
+			WrDec(m_nPrePressing, 6, lcdstr1);
+			WrChar('*', 8, lcdstr1);
+			Wr3Dec(m_nPressing, 9, lcdstr1);
+		}
+		else
+		{
+			Wr3Dec(m_nPrePressing, 6, lcdstr1);
+			WrChar('*', 9, lcdstr1);
+			WrDec(m_nPressing, 10, lcdstr1);
+		}
+	}
+	else
+	{
+		Wr3Dec(m_nPrePressing, 5, lcdstr1);
+		WrChar('*', 8, lcdstr1);
+		Wr3Dec(m_nPressing, 9, lcdstr1);
+	}
+	/*Wr3Dec(m_nPrePressing, 5, lcdstr1); // число предварительного сжати€
+	Wr3Dec(m_nPressing, 9, lcdstr1); // число сжати€*/
 	Wr1Dec(m_nModulation, 15, lcdstr1); // число модул€ции
 	Wr1Dec(m_nCurrent, 2, lcdstr2); // число мощности тока
-	WrDec(m_nHeating, 7, lcdstr2); // число нагрева
+	Wr3Dec(m_nHeating, 6, lcdstr2); // число нагрева
 	Wr3Dec(m_nForging, 13, lcdstr2); // число проковки
 }
 

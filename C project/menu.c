@@ -85,12 +85,12 @@ void UpdateLcdParam(u8 a_ParamsId, u8 a_nVal)
 	switch(a_ParamsId)
 	{
 		case paramPrePressing:
+		case paramPressing:
 		case paramHeating:
 		case paramForging:
 		case paramPause:
 			Wr3Dec(a_nVal, 12, lcdstr2);
 			break;
-		case paramPressing:
 		case paramModulation:
 		case paramCurrent:
 			WrDec(a_nVal, 12, lcdstr2);
@@ -206,15 +206,18 @@ void SetMenuData(u8 a_id)
 			lcd_gotoxy(0, lcdstr2);
 			u8 mode = curMode.get();
 			if (mode == SIMPLE_MODE)
-				lcd_puts_p((const char *)_InfoSimple);
-			else
 			{
-				if (mode == AUTO_MODE)
-					lcd_puts_p((const char *)_InfoAuto);
-				else
-					lcd_puts_p((const char *)_InfoSeam);
+				lcd_puts_p((const char *)_InfoSimple);
+			}
+			else if (mode == AUTO_MODE)
+			{
+				lcd_puts_p((const char *)_InfoAuto);
 				u8 tmp = readByteEE((u16)&eeMass + curPrg.get() * paramNum + addrPause);
 				Wr3Dec(tmp, 12, lcdstr2);
+			}
+			else if (mode == SEAM_MODE)
+			{
+				lcd_puts_p((const char *)_InfoSeam);
 			}
 			break;
 		case idPrograms:
