@@ -117,6 +117,8 @@ enum tagHL
 #define PINPEDAL2	PINB	/* пин педали */
 #define DDRPEDAL1	DDRB	/* direct порт педали предварительного сжатия */
 #define DDRPEDAL2	DDRB	/* direct порт педали */
+#define PORTPEDAL1	PORTB	/* порт педали для установки подтягивающих резисторов */
+#define PORTPEDAL2	PORTB
 
 #define DDRBUTTONS	DDRB	/* */
 #define PINBUTTONS	PINB
@@ -147,20 +149,20 @@ enum tagParams
 	extremeParam = cmnprmPedalNum,	// крайний параметр
 
 	minPrePressing	= 0,
-	minPressing		= 1,
+	minPressing		= 0,
 	minModulation	= 0,
 	minCurrent		= 0,
-	minHeating		= 1,
+	minHeating		= 0,
 	minForging		= 0,
-	MIN_PAUSE		= 1,
+	MIN_PAUSE		= 0,
 
-	maxPrePressing	= 150,
-	maxPressing		= 150,
+	maxPrePressing	= 250,
+	maxPressing		= 250,
 	maxModulation	= 9,
 	maxCurrent		= 9,
-	maxHeating		= 150,
-	maxForging		= 150,
-	MAX_PAUSE		= 150,
+	maxHeating		= 250,
+	maxForging		= 250,
+	MAX_PAUSE		= 250,
 
 	defPrePressing	= 30,
 	defPressing		= 3,

@@ -200,22 +200,24 @@ u16 _CurrentPauseTCNT; // константа таймера тока текущей программы
 u8 doModulation()
 {
 	wdt_start(wdt_60ms);
-	setScreen(scrHeating); // инициализируем экран сварки
-	switchHL(pinHeatingHL, ON); // включение светодиода нагрева
+	//u16 heating = m_nHeating << 1;
+	//if (heating > TIME_TO_WRITE)
+	if (m_nHeating > 0)
+		setScreen(scrHeating); // инициализируем экран сварки
 	//if (m_nModulation == 0) return TRUE;
-	//_CurrentPauseTCNT = /*0xFFFF - */(m_nCurrent + 1) * (40000 / (maxCurrent + 1));// если максимальный ток равен 99, то не делаем +1. 40000 - это количество тактов в таймере без предделителя на 10 мс, т.е. 1 полупериод сетевого напряжения
-	//_CurrentPauseTCNT = /*0xFFFF - */4000 * (maxCurrent - m_nCurrent);
 	_CurrentPauseTCNT = 4000 * (m_nCurrent + 1);
 	u8 nMod = m_nModulation << 1;// умножаем на 2, т.к. полупериодов в 2 раза больше
 	u16 step = _CurrentPauseTCNT / (nMod + 1);
 	//float fstep = _CurrentPauseTCNT / (m_nModulation + 1); // расчитываю шаг приращения константы для увеличения тока
 	u8 cnt = /*m_nModulation;/*/ 1;
 	_TCNT1 = 25535 + step * cnt; // 0xFFFF - 40000 + step * cnt
+	switchHL(pinHeatingHL, ON); // включение светодиода нагрева
 	flags.halfPeriod = 0;
 	flags.useT1forHeating = 1;
 	if (m_nModulation == 0)
 	{
-		_TCNT1 = 25535 + _CurrentPauseTCNT;
+		if (m_nHeating > 0)
+			_TCNT1 = 25535 + _CurrentPauseTCNT;
 		return TRUE;
 	}
 	
@@ -280,6 +282,7 @@ u8 doHeating()
 {
 	u8 res = doModulation();
 	if (res == FALSE) return FALSE;
+	if (m_nHeating == 0) return TRUE;
 	wdt_start(wdt_60ms);
 	u16 heating = (u16)m_nHeating << 1;// делаю полупериоды из периодов
 	while(!flags.halfPeriod) // ждём прерывание int0
@@ -292,7 +295,7 @@ u8 doHeating()
 	}
 	flags.halfPeriod = 0; // сбросим флаг
 	flags.transswitchoff = 0;
-	if(m_nCurrent < 9)
+	if (m_nCurrent < 9)
 	{
 //		_TCNT1 = times[m_nCurrent];
 //		TCNT1 = _TCNT1;
@@ -351,13 +354,14 @@ u8 doHeating()
 
 u8 doForging()
 {
+	if (m_nForging == 0) return TRUE;
 	BOOL bToWrite = FALSE;
 	wdt_start(wdt_60ms);
 	setScreen(scrForging);
 	switchHL(pinForgingHL, ON);
 	u16 forging = m_nForging << 1;
 	u8 towrite = m_nForging;
-	if (forging > TIME_TO_WRITE)
+	//if (forging > TIME_TO_WRITE)
 		bToWrite = TRUE;
 	while(1)
 	{
@@ -388,11 +392,12 @@ u8 doForging()
 
 u8 doPause()
 {
+	if (m_nPause == 0) return TRUE;
 	BOOL bToWrite = FALSE;
 	wdt_start(wdt_60ms);
 	u16 pause = m_nPause << 1;
 	u8 towrite = m_nPause;
-	if (pause > TIME_TO_WRITE)
+	//if (pause > TIME_TO_WRITE)
 		bToWrite = TRUE;
 	setScreen(scrPause);
 	switchHL(pinPauseHL, ON);
@@ -447,12 +452,13 @@ u8 DoWelding()
 		if (res == FALSE)
 			return GetWeldingState();
 		res = doForging(); // проковка сварной точки
-		switchValve2(OFF);
+		//switchValve2(OFF);
 		switchHL(pinForgingHL, OFF);
 		if (res == FALSE)
 			return GetWeldingState();
 		if (m_nMode == SIMPLE_MODE)
 		{
+			switchValve2(OFF);
 			setScreen(scrWeldingCompleted);
 			while(1)
 			{
@@ -467,7 +473,11 @@ u8 DoWelding()
 				wdt_feed();
 			}
 		}
-		doPause(); // пауза между циклами сварки
+		if (m_nPause > 0)
+		{
+			switchValve2(OFF);
+			doPause(); // пауза между циклами сварки
+		}
 	}
 	return WELD_IS_RUNNIG;
 }

@@ -173,7 +173,9 @@ void initProc()
 	PORTVALVE2 |= 1<<pinValve2;
 	DDRLED = 0xff;
 	PORTLED = ALL_LEDS_OFF; // выключить все светодиоды
-	PORTBUTTONS |= 0xf<<2; // устанавливаю подтягивающие резисторы
+	PORTBUTTONS |= 0xf<<2; // устанавливаю подтягивающие резисторы на кнопки
+	PORTPEDAL1 |= 1 << pinPedal1; // и педали
+	PORTPEDAL2 |= 1 << pinPedal2;
 	
 	GICR |= 1<<INT0; // включение INT0
 	asm("sei");

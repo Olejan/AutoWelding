@@ -26,6 +26,7 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include "lcd_drv.h"
+//#include "lcd_ru_simbols.h"
 #include "typedef.h"
 
 

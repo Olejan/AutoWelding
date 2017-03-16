@@ -50,7 +50,7 @@ __attribute__((section(".eeprom")))u8 ee_pedalnum = 2;
 const char PROGMEM
 	_Empty[]			= "                ",
 #ifndef _RUSSIAN_VERSION_
-	_ViewInfo1[]		= "Version 13.03.17",
+	_ViewInfo1[]		= "Version 17.03.17",
 	_InfoAuto[]			= "Auto (Pause    )",
 	_InfoSeam[]			= "Mode is Seam    ",
 	_InfoSimple[]		= "Mode is Simple  ",
@@ -93,7 +93,7 @@ const char PROGMEM
 	_SignalAbscent[]	= "Synchronization ",
 	_Synch[]			= "      is absent!";
 #else
-	_ViewInfo1[]		= "Версия 13.03.17R",
+	_ViewInfo1[]		= "Версия 17.03.17R",
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSeam[]			= "Режим Шовный    ",
 	_InfoSimple[]		= "Режим Одиночный ",
