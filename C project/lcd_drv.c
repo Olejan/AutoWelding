@@ -213,12 +213,13 @@ static void lcd_write(uint8_t data,uint8_t rs)
     unsigned char dataBits ;
 
     if (rs)
-	{   /* write data        (RS=1, RW=0) */
-       lcd_rs_high();
+	{
 #ifdef _RUSSIAN_VERSION_
 	   if(data >= 'À') data = GetAdaptedChar(data);
 	   else if (data == '$') data = _yo;
 #endif
+	   /* write data        (RS=1, RW=0) */
+       lcd_rs_high();
     }
 	else
 	{    /* write instruction (RS=0, RW=0) */
@@ -484,6 +485,30 @@ void lcd_gotoxy(uint8_t x, uint8_t y)
 
 }/* lcd_gotoxy */
 
+void lcd_gotoxy_cg(uint8_t x, uint8_t y)
+{
+	#if LCD_LINES==1
+	lcd_command((1<<LCD_CGRAM)+LCD_START_LINE1+x);
+	#endif
+	#if LCD_LINES==2
+	if ( y==0 )
+	lcd_command((1<<LCD_CGRAM)+LCD_START_LINE1+x);
+	else
+	lcd_command((1<<LCD_CGRAM)+LCD_START_LINE2+x);
+	#endif
+	#if LCD_LINES==4
+	if ( y==0 )
+	lcd_command((1<<LCD_CGRAM)+LCD_START_LINE1+x);
+	else if ( y==1)
+	lcd_command((1<<LCD_CGRAM)+LCD_START_LINE2+x);
+	else if ( y==2)
+	lcd_command((1<<LCD_CGRAM)+LCD_START_LINE3+x);
+	else /* y==3 */
+	lcd_command((1<<LCD_CGRAM)+LCD_START_LINE4+x);
+	#endif
+
+	}/* lcd_gotoxy */
+
 
 /*************************************************************************
 *************************************************************************/
@@ -565,6 +590,40 @@ void lcd_putc(char c)
 #endif
         lcd_write(c, 1);
     }
+
+}/* lcd_putc */
+
+//static int k = 0;
+void lcd_put_cg_c(const char *s, char k, char i, char j)
+{
+    lcd_waitbusy();   // read busy-flag and address counter
+
+    lcd_write(0x40 | (k << 3), 0);
+	register char c;
+	c = pgm_read_byte(s++);
+	lcd_putc(c);
+	c = pgm_read_byte(s++);
+	lcd_putc(c);
+	c = pgm_read_byte(s++);
+	lcd_putc(c);
+	c = pgm_read_byte(s++);
+	lcd_putc(c);
+	c = pgm_read_byte(s++);
+	lcd_putc(c);
+	c = pgm_read_byte(s++);
+	lcd_putc(c);
+	c = pgm_read_byte(s++);
+	lcd_putc(c);
+	c = pgm_read_byte(s++);
+	lcd_putc(c);
+
+	lcd_waitbusy();
+	lcd_write((j == 0 ? 0x80 : 0xc0) + i, 0);// set string addr
+	lcd_putc(k);
+
+
+	//k++;
+	//if(k>7)k=0;
 
 }/* lcd_putc */
 

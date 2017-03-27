@@ -236,11 +236,11 @@ void init()
 #ifndef _DEBUG_
 	lcd_init(LCD_DISP_ON);
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
-	CheckSynchroImpulse();                                          
+	//CheckSynchroImpulse();                                          
 #endif
 	//init_lcd_simbols();
 //#ifdef _DEMO_VERSION_
-	//SplashScreen();
+	SplashScreen();
 //#endif // _DEMO_VERSION_
 #endif // _DEBUG_
 	SetMenu(&mPrograms);

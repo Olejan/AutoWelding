@@ -1,11 +1,61 @@
 //#define _DEBUG_
 //#define _DEMO_VERSION_
 #define _RUSSIAN_VERSION_
-#define WDT_ENABLE
+#define _USE_CG_SIMBOLS
+//#define WDT_ENABLE
 #define LED_COMMON_CATHODE	/* светодиоды подключены с общим катодом */
 #define SWITCH_OFF_TRANS_BY_BACK_FRONT
 
-#ifdef _RUSSIAN_VERSION_
+#ifdef _USE_CG_SIMBOLS
+//Порядок русских букв в массиве
+#define _B	0/*Б*/
+#define _G	1/* Г*/
+#define _YO 2/* Ё*/
+#define _ZH 3/* Ж*/
+#define _Z	4/* З*/
+#define _I	5/* И*/
+#define _II 6/* Й*/
+#define _L	7/* Л*/
+#define _P	8/* П*/
+#define _U	9/* У*/
+#define _F	10/* Ф*/
+#define _CH 11/* Ч*/
+#define _SH 12/* Ш*/
+#define _SS 13/* Ъ*/
+#define _Y	14/* Ы*/
+#define _E	15/* Э*/
+#define _YU 16/* Ю*/
+#define _YA 17/* Я*/
+#define _b  18/* б*/
+#define _v	19/* в*/
+#define _g	20/* г*/
+#define _yo 21/* ё*/
+#define _zh 22/* ж*/
+#define _z	23/* з*/
+#define _i	24/* и*/
+#define _ii 25/* й*/
+#define _k	26/* к*/
+#define _l	27/* л*/
+#define _m	28/* м*/
+#define _n	29/* н*/
+#define _p	30/* п*/
+#define _t	31/* т*/
+#define _ch 32/* ч*/
+#define _sh 33/* ш*/
+#define _ss 34/* ъ*/
+#define _y	35/* ы*/
+#define _sfts 36/* ь*/
+#define _e	37/* э*/
+#define _yu 38/* ю*/
+#define _ya 39/* я*/
+#define _D	40/* Д*/
+#define _C	41/* Ц*/
+#define _SSH 42/* Щ*/
+#define _d	43/* д*/
+#define _f	44/* ф*/
+#define _c	45/* ц*/
+#define _ssh 46/* щ*/
+#else
 //Русские буквы
 #define _B 160/*Б*/
 #define _G 161/* Г*/

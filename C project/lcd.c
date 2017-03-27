@@ -91,12 +91,44 @@ void SendStr(u8 * str, char num)
 	for(u8 i = 0; i < num; i++)
 		lcd_putc(*(str + i));
 }// SendStr //
-
+extern const char PROGMEM _ru_arr[][8];
 void SplashScreen()
 {
 	wdt_start(wdt_250ms);
 	lcd_home();
+
+int i = 0, k = 0, is = 0;
+	while(1)
+	{
+		for (int j = 0; j< 16; j++)
+		{
+			lcd_put_cg_c(_ru_arr[i++], k++, j, is); _delay_ms(500);
+			if (i > 46) i=0;
+			if (k == 8) k=0;
+		}
+		is++;
+		if (is > 1)
+		{
+			is = 0;
+			//lcd_clrscr();
+		}
+	}
+
+	for(;;);
+
+
+
+
+
+
+
+
+
 	u8 str1[16], str2[16];
+
+
+
+
 
 	memcpy_P(str1, _Splash1, 16);
 	memcpy_P(str2, _Splash2, 16);
