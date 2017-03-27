@@ -156,6 +156,7 @@ void initProc()
 	TCNT1L = 0x70;
 	//TCCR1B = 1;//<<CS10;
 
+	PORTD = 3 << 2; // подтяжка входов прерывания
 	MCUCR = (2 << ISC10); // int1 по заднему фронту (кнопка)
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	MCUCR |= (1 << ISC00); // int0 по любому фронту (синхроимпульс)
