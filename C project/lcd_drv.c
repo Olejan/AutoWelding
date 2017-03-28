@@ -213,12 +213,13 @@ static void lcd_write(uint8_t data,uint8_t rs)
     unsigned char dataBits ;
 
     if (rs)
-	{   /* write data        (RS=1, RW=0) */
-       lcd_rs_high();
-#ifdef _RUSSIAN_VERSION_
-	   if(data >= 'À') data = GetAdaptedChar(data);
-	   else if (data == '$') data = _yo;
-#endif
+    {
+	    #ifdef _RUSSIAN_VERSION_
+	    if(data >= 'À') data = GetAdaptedChar(data);
+	    else if (data == '$') data = _yo;
+	    #endif
+	    /* write data        (RS=1, RW=0) */
+	    lcd_rs_high();
     }
 	else
 	{    /* write instruction (RS=0, RW=0) */
