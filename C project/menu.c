@@ -29,7 +29,9 @@ extern const u8
 	_Simple[],
 	_Auto[],
 	_Seam[],
-	_Pause_[];
+	_Pause_[],
+	_On[],
+	_Off[];
 
 
 	
@@ -111,6 +113,17 @@ void UpdateLcdParam(u8 a_ParamsId, u8 a_nVal)
 		case cmnprmStartPrg:
 		case cmnprmPedalNum:
 			WrDec(a_nVal, 14, lcdstr2);
+			break;
+		case cmnprmBrtns:
+#ifndef _RUSSIAN_VERSION_
+			lcd_gotoxy(11, lcdstr2);
+#else
+			lcd_gotoxy(12, lcdstr2);
+#endif
+			if (a_nVal == ON)
+				lcd_puts_p((const char *)_On);
+			else
+				lcd_puts_p((const char *)_Off);
 			break;
 	}
 	NoteTime();
@@ -253,6 +266,9 @@ void SetMenuData(u8 a_id)
 		case idChoosePedalNum:		case idEditPedalNum:
 			param = cmnprmPedalNum;
 			break;
+		case idChooseBrightness:	case idEditBrightness:
+			param = cmnprmBrtns;
+			break;
 	}
 	switch(a_id)
 	{
@@ -266,6 +282,7 @@ void SetMenuData(u8 a_id)
 		case idChoosePause:			case idEditPause:
 		case idChooseStartPrg:		case idEditStartPrg:
 		case idChoosePedalNum:		case idEditPedalNum:
+		case idChooseBrightness:	case idEditBrightness:
 			if (param != 0xff)
 				UpdateLcdParam(param, GetValue(param));
 			break;

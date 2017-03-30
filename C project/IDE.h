@@ -22,3 +22,4 @@ extern void WriteSyncWarning();
 extern void WriteEmptySqreen();
 extern BOOL isPedal1Pressed();
 extern BOOL isPedal2Pressed();
+extern void SwitchAllLED(u8 a_state);

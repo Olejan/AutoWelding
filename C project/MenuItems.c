@@ -15,6 +15,7 @@ void fParamModulation();
 void fParamCurrent();
 void fCmnPrmStartPrg();
 void fCmnPrmPedalNum();
+void fCmnPrmBrtns();
 void fEditPrePressing();
 void fEditPressing();
 void fEditHeating();
@@ -23,6 +24,7 @@ void fEditModulation();
 void fEditCurrent();
 void fEditStartPrg();
 void fEditPedalNum();
+void fEditBrtns();
 void fEditMode();
 void fEditPause();
 BOOL CheckUpEditTime(u32 time);
@@ -46,6 +48,7 @@ u8 eeMass[programNumber][paramNum] =
 };
 __attribute__((section(".eeprom")))u8 ee_startprg = 2;
 __attribute__((section(".eeprom")))u8 ee_pedalnum = 2;
+__attribute__((section(".eeprom")))u8 ee_brtns = ON;
 //=========================== строки меню ===========================
 const char PROGMEM
 	_Empty[]			= "                ",
@@ -76,6 +79,7 @@ const char PROGMEM
 	_Completed[]		= "     completed! ",
 	_StartPrg[]			= "Start Program 01",
 	_PedalNum[]			= "Pedal number   2",
+	_Brightness[]		= " Brightness   On",
 	_PressingIs[]		= " Pressing is    ",
 	_HeatingIs[]		= " Heating is     ",
 	_ForgingIs[]		= " Forging is     ",
@@ -91,9 +95,15 @@ const char PROGMEM
 	_Demo1[]			= " Demo version   ",
 	_Demo2[]			= "   Demo version ",
 	_SignalAbscent[]	= "Synchronization ",
-	_Synch[]			= "      is absent!";
+	_Synch[]			= "      is absent!",
+	_On[]				= " On",
+	_Off[]				= "Off"
+	_Attention[]		= "ATTENTION       ",
+	_Alarm[]			= "        ALARM!!!",
+	_Checkup[]			= "Check up        ",
+	_Equipnent[]		= "    an equipment";
 #else
-	_ViewInfo1[]		= "Версия 17.03.17R",
+	_ViewInfo1[]		= "Версия 29.03.17R",
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSeam[]			= "Режим Шовный    ",
 	_InfoSimple[]		= "Режим Одиночный ",
@@ -119,6 +129,7 @@ const char PROGMEM
 	_Completed[]		= "     заверш$н!  ",
 	_StartPrg[]			= "Стартовая прг 01",
 	_PedalNum[]			= "Всего педалей  2",
+	_Brightness[]		= "Подсветка       ",
 	_PressingIs[]		= " Сжатие         ",
 	_HeatingIs[]		= " Нагрев         ",
 	_ForgingIs[]		= " Проковка       ",
@@ -134,7 +145,14 @@ const char PROGMEM
 	_Demo1[]			= " Демо версия    ",
 	_Demo2[]			= "   Демо версия  ",
 	_SignalAbscent[]	= "Нет сигнала     ",
-	_Synch[]			= "  синхронизации!";
+	_Synch[]			= "  синхронизации!",
+	_On[]				= " Вкл",
+	_Off[]				= "Выкл",
+	_Attention[]		= "ВНИМАНИЕ        ",
+	_Alarm[]			= "       АВАРИЯ!!!",
+	_Checkup[]			= "Проверьте       ",
+	_Equipnent[]		= "    оборудование";
+
 #endif
 
 
@@ -147,6 +165,7 @@ const MenuItem
 	mChooseCmnStngs		PROGMEM = { idChooseCmnStngs,	_ChooseMenu,	_CommonStngs,	fChooseCmnStngs },
 	mCmnPrmStartPrg		PROGMEM = { idChooseStartPrg,	_CommonStngs,	_StartPrg,		fCmnPrmStartPrg },
 	mCmnPrmPedalNum		PROGMEM = { idChoosePedalNum,	_CommonStngs,	_PedalNum,		fCmnPrmPedalNum },
+	mCmnPrmBrtns		PROGMEM = { idChooseBrightness,	_CommonStngs,	_Brightness,	fCmnPrmBrtns	},
 	mParamMode			PROGMEM = { idChooseMode,		_ChooseParam,	_Mode,			fParamMode },
 	mParamPrePressing	PROGMEM = { idChoosePrePressing,_ChooseParam,	_PrePressing,	fParamPrePressing },
 	mParamPressing		PROGMEM = { idChoosePressing,	_ChooseParam,	_Pressing,		fParamPressing },
@@ -157,6 +176,7 @@ const MenuItem
 	mParamPause			PROGMEM = { idChoosePause,		_ChooseParam,	_Pause,			fParamPause },
 	mEditStartPrg		PROGMEM = { idEditStartPrg,		_Editing, 		_StartPrg,		fEditStartPrg },
 	mEditPedalNum		PROGMEM = { idEditPedalNum,		_Editing, 		_PedalNum,		fEditPedalNum },
+	mEditBrtns			PROGMEM = {	idEditBrightness,	_Editing,		_Brightness,	fEditBrtns },
 	mEditMode			PROGMEM = { idEditMode,			_Editing,		_Mode,			fEditMode },
 	mEditPrePressing	PROGMEM = { idEditPrePressing,	_Editing,		_PrePressing,	fEditPrePressing },
 	mEditPressing		PROGMEM = { idEditPressing,		_Editing,		_Pressing,		fEditPressing },
@@ -186,6 +206,7 @@ extern u8 readByteEE(u16 addr);
 extern BOOL is_time_expired(u32 time);
 extern void NoteTime();
 extern u8 getCurMenuId();
+extern void switchBrightness(u8 a_state);
 
 void fInfo()
 {
@@ -283,8 +304,10 @@ void fCmnPrmStartPrg()
 		switch(get_key())
 		{
 			case keyLeft:
-			case keyRight:
 				SetMenu(&mCmnPrmPedalNum);
+			break;
+			case keyRight:
+				SetMenu(&mCmnPrmBrtns);
 			break;
 			case keyUp:
 				SetMenu(&mChooseCmnStngs);
@@ -300,6 +323,8 @@ void fCmnPrmPedalNum()
 		switch(get_key())
 		{
 			case keyLeft:
+				SetMenu(&mCmnPrmBrtns);
+			break;
 			case keyRight:
 				SetMenu(&mCmnPrmStartPrg);
 			break;
@@ -308,6 +333,25 @@ void fCmnPrmPedalNum()
 			break;
 			case keyDown:
 				SetMenu(&mEditPedalNum);
+			break;
+		}
+}
+void fCmnPrmBrtns()
+{
+	if (flags.scanKey)
+		switch (get_key())
+		{
+			case keyLeft:
+				SetMenu(&mCmnPrmStartPrg);
+			break;
+			case keyRight:
+				SetMenu(&mCmnPrmPedalNum);
+			break;
+			case keyUp:
+				SetMenu(&mChooseCmnStngs);
+			break;
+			case keyDown:
+				SetMenu(&mEditBrtns);
 			break;
 		}
 }
@@ -840,6 +884,50 @@ void fEditPedalNum()
 						SetValue(cmnprmPedalNum, val);
 					SavedDlg(1);
 					SetMenu(&mCmnPrmPedalNum);
+				return;
+			}
+		}
+		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
+		return;
+	}
+}
+void fEditBrtns()
+{
+	wdt_start(wdt_60ms);
+	u8 val = readByteEE((u16)&ee_brtns);
+	u8 oldVal = val;
+	if (val != ON && val != OFF)
+	{
+		val = ON;
+		UpdateLcdParam(cmnprmBrtns, val);
+	}
+	while(1)
+	{
+		if (flags.scanKey)
+		{
+			wdt_feed();
+			switch(get_key())
+			{
+				case keyLeft:
+					val = OFF;
+					UpdateLcdParam(cmnprmBrtns, val);
+					switchBrightness(OFF);
+				break;
+				case keyRight:
+					val = ON;
+					UpdateLcdParam(cmnprmBrtns, val);
+					switchBrightness(ON);
+				break;
+				case keyUp:
+					SavedDlg(0);
+					SetMenu(&mCmnPrmBrtns);
+					switchBrightness(oldVal);
+				return;
+				case keyDown:
+					if (val != oldVal)
+					SetValue(cmnprmBrtns, val);
+					SavedDlg(1);
+					SetMenu(&mCmnPrmBrtns);
 				return;
 			}
 		}

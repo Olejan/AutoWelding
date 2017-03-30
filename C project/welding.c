@@ -29,6 +29,7 @@ extern volatile u16 _TCNT1;
 extern u8 eeMass[programNumber][paramNum];
 extern __attribute__((section(".eeprom")))u8 ee_startprg;
 extern __attribute__((section(".eeprom")))u8 ee_pedalnum;
+extern __attribute__((section(".eeprom")))u8 ee_brtns;
 //=================================================================
 // Data
 //=================================================================
@@ -43,6 +44,7 @@ static u8 m_nMode = AUTO_MODE;
 static u8 m_nPause = MAX_PAUSE;
 static u8 m_nCurPrg = 0; // текущая программа
 static u8 m_nPedalNum = 2; // количество педалей
+static u8 m_nBrtns = ON;
 
 static u8 m_TaskWelding_State = 0; // состояние задачи сварки		
 //===================================================================
@@ -638,6 +640,8 @@ u8 GetValue(u8 a_nParamId)
 			addr = (u16)&ee_startprg;
 		else if (a_nParamId == cmnprmPedalNum)
 			addr = (u16)&ee_pedalnum;
+		else if (a_nParamId == cmnprmBrtns)
+			addr = (u16)&ee_brtns;
 		else
 			addr = (u16)&eeMass + m_nCurPrg * paramNum + a_nParamId; // a_nParamId == addr...
 		return readByteEE(addr);
@@ -654,6 +658,8 @@ void SetValue(u8 a_nParamId, u8 a_nVal)
 			addr = (u16)&ee_startprg;
 		else if (a_nParamId == cmnprmPedalNum)
 			addr = (u16)&ee_pedalnum;
+		else if (a_nParamId == cmnprmBrtns)
+			addr = (u16)&ee_brtns;
 		else
 			addr = (u16)&eeMass + m_nCurPrg * paramNum + a_nParamId; // a_nParamId == addr...
 		switch(a_nParamId)
@@ -708,6 +714,11 @@ void SetValue(u8 a_nParamId, u8 a_nVal)
 					return;
 				m_nPedalNum = a_nVal;
 				break;
+			case cmnprmBrtns:
+				if (a_nVal != ON && a_nVal != OFF)
+					return;
+				m_nBrtns = a_nVal;
+				break;
 		}
 		writeByteEE(addr, a_nVal);
 	}
@@ -726,6 +737,7 @@ void initParams()
 	// init local params
 	initPrgParams(m_nCurPrg); // обновляю значение параметров программы
 	m_nPedalNum = readByteEE((u16)&ee_pedalnum);
+	m_nBrtns = readByteEE((u16)&ee_brtns);
 }
 
 // инициализация переменных из eeprom

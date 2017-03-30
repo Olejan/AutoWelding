@@ -187,6 +187,18 @@ void switchHL(u8 line, u8 state)
 #endif
 }
 
+void SwitchAllLED(u8 a_state)
+{
+	if(a_state == ON)
+	{
+		PORTLED = 0;
+	}
+	else
+	{
+		PORTLED = 0xff;
+	}
+}
+
 void switchModeHL(u8 a_mode)
 {
 	if (a_mode == SIMPLE_MODE)
@@ -198,5 +210,17 @@ void switchModeHL(u8 a_mode)
 	{
 		switchHL(pinSimpleHL, OFF);
 		switchHL(pinAutoHL, ON);
+	}
+}
+
+void switchBrightness(u8 a_state)
+{
+	if (a_state == ON)
+	{
+		PORT_IND_BRT |= 1 << pinIndBrt;
+	}
+	else
+	{
+		PORT_IND_BRT &= ~(1 << pinIndBrt);
 	}
 }

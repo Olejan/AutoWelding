@@ -79,6 +79,8 @@ enum tag
 	pinValve2	= 1, // PORTB.1
 	pinPedal1	= 6, // PORTB.6
 	pinPedal2	= 7, // PORTB.7
+	pinIndBrt	= 7, // PORTD.7
+	pinFault	= 0, // PORTA.0
 	firstPrg	= 0, // первая программа
 #ifdef _DEMO_VERSION_
 	lastPrg		= 9,
@@ -128,10 +130,19 @@ enum tagHL
 #define PORTTRANS	PORTD	/* порт трансформатора */
 #define DDRVALVE1	DDRB	/* direct порт клапана предварительного сжатия */
 #define DDRVALVE2	DDRB	/* direct порт клапана */
-#define PORTVALVE1	PORTB	/* порт клапана предварительного сжатия*/
+#define PORTVALVE1	PORTB	/* порт клапана предварительного сжатия */
 #define PORTVALVE2	PORTB	/* порт клапана */
 #define DDRLED		DDRC
 #define PORTLED		PORTC	/* порт светодиодов */
+
+/* порт входа "Ошибка" */
+#define PORT_FAULT	PORTA
+#define DDR_FAULT	DDRA
+#define PIN_FAULT	PINA
+/* порт регулятора подсветки индикатора */
+#define PORT_IND_BRT	PORTD
+#define DDR_IND_BRT		DDRD
+#define PIN_IND_BRT		PIND
 
 enum tagParams
 {
@@ -146,7 +157,8 @@ enum tagParams
 	paramNum,				// количество параметров !!! должен стоять сразу после последнего параметра !!!
 	cmnprmStartPrg,			// стартовая программа
 	cmnprmPedalNum,			// количество педалей
-	extremeParam = cmnprmPedalNum,	// крайний параметр
+	cmnprmBrtns,			// подсветка
+	extremeParam = cmnprmBrtns,	// крайний параметр
 
 	minPrePressing	= 0,
 	minPressing		= 0,
@@ -263,6 +275,8 @@ enum tagIds
 	idEditStartPrg,
 	idChoosePedalNum,
 	idEditPedalNum,
+	idChooseBrightness,
+	idEditBrightness,
 };
 
 enum tagMode

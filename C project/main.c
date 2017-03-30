@@ -51,6 +51,7 @@ extern void StartTaskWelding();
 extern void StopTaskWelding();
 extern void initParams();
 extern void switchHL(u8 line, u8 state);
+extern void AlarmTask();
 //=========================================================================
 
 ISR(TIMER0_OVF_vect)
@@ -78,6 +79,8 @@ ISR(TIMER0_OVF_vect)
 	if(syncpresent)
 		syncpresent--;
 #endif
+	if (!(PIN_FAULT & (1<<pinFault)))
+		AlarmTask();
 }
 
 volatile u16 _TCNT1;
@@ -177,6 +180,11 @@ void initProc()
 	PORTBUTTONS |= 0xf<<2; // устанавливаю подтягивающие резисторы на кнопки
 	PORTPEDAL1 |= 1 << pinPedal1; // и педали
 	PORTPEDAL2 |= 1 << pinPedal2;
+
+	DDR_FAULT &= ~(1 << pinFault);
+	PORT_FAULT |= 1 << pinFault; // подтягивающий резистор
+	DDR_IND_BRT |= 1 << pinIndBrt;
+	PORT_IND_BRT |= 1 << pinIndBrt;
 	
 	GICR |= 1<<INT0; // включение INT0
 	asm("sei");
@@ -190,7 +198,11 @@ void initVars()
 	switchHL(pinCurrentHL, ON);
 }
 #ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
-extern const char _SignalAbscent[], _Synch[], _Empty[];
+extern const char _SignalAbscent[], _Synch[], _Empty[],
+	_Attention[],
+	_Alarm[],
+	_Checkup[],
+	_Equipnent[];
 extern void WriteMessage(const char* str1, const char* str2);
 void CheckSynchroImpulse()
 {
@@ -226,6 +238,32 @@ void CheckSynchroImpulse()
 	}
 }
 #endif
+void WriteMsgAndBlinkLED(u8 a_var)
+{
+	wdt_feed();
+	if (a_var == 0)
+		WriteMessage(_Attention, _Alarm);
+	else
+		WriteMessage(_Checkup, _Equipnent);
+	for (u8 i = 0; i < 4; i++)
+	{
+		SwitchAllLED(i%2);
+		_delay_ms(500);
+		wdt_feed();
+	}
+}
+void AlarmTask()
+{
+	wdt_start(wdt_2s);
+	switchTrans(OFF);
+	switchValve1(OFF);
+	switchValve2(OFF);
+	while(1)
+	{
+		WriteMsgAndBlinkLED(0);
+		WriteMsgAndBlinkLED(1);
+	}
+}
 void init()
 {
 	//Test();
