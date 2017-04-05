@@ -14,11 +14,7 @@ void wait_x10us(u8 a_i)
 {
 	while(a_i--)
 	{
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 		if (flags.halfPeriod || flags.transswitchoff) // если срочно нужно выключить транс
-#else
-		if (flags.halfPeriod) // если пришло прерывание на int0
-#endif
 			return;
 		_delay_us(8);
 	}
@@ -30,11 +26,7 @@ BOOL wait_100us()
 	while(i--)
 	{
 		_delay_us(7);
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 		if (flags.halfPeriod || flags.transswitchoff) // если срочно нужно выключить транс
-#else
-		if (flags.halfPeriod) // если пришло прерывание на int0
-#endif
 			return TRUE;
 	}
 	asm("nop");
@@ -52,11 +44,7 @@ BOOL wait_300us()
 	while(i--)
 	{
 		_delay_us(8);
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 		if (flags.halfPeriod || flags.transswitchoff) // если срочно нужно выключить транс
-#else
-		if (flags.halfPeriod) // если пришло прерывание на int0
-#endif
 			return TRUE;
 	}
 	asm("nop");
@@ -206,9 +194,14 @@ void switchModeHL(u8 a_mode)
 		switchHL(pinAutoHL, OFF);
 		switchHL(pinSimpleHL, ON);
 	}
-	else
+	else if (a_mode == AUTO_MODE)
 	{
 		switchHL(pinSimpleHL, OFF);
+		switchHL(pinAutoHL, ON);
+	}
+	else if (a_mode)
+	{
+		switchHL(pinSimpleHL, ON);
 		switchHL(pinAutoHL, ON);
 	}
 }
@@ -224,3 +217,26 @@ void switchBrightness(u8 a_state)
 		PORT_IND_BRT &= ~(1 << pinIndBrt);
 	}
 }
+/*
+void switchCurrent()
+{
+	if (flags.currentIsEnable == 1)// если ток был разрешён
+	{// запрещаем его
+		flags.currentIsEnable = 0; // запрещаю ток
+		PORTTRANS |= 1<<pinTrans; // если был включён, выключаю трансформатор
+#ifdef LED_COMMON_CATHODE
+		PORTLED |= 1 << pinCurrentHL;
+#else
+		PORTLED &= ~(1 << pinCurrentHL);
+#endif
+	}		
+	else
+	{// разрешаем его
+		flags.currentIsEnable = 1; // разрешаю ток
+#ifdef LED_COMMON_CATHODE
+		PORTLED &= ~(1 << pinCurrentHL);
+#else
+		PORTLED |= 1 << pinCurrentHL;
+#endif
+	}
+}*/

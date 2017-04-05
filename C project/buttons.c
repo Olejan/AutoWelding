@@ -21,15 +21,14 @@
  */
 static u8 get_key_code(void)
 {
-	u8 buf;
-	buf = ~PINBUTTONS;
-	buf >>= 2;
-	/*if (!(PIND & (1 << 4)))// PIND.0 - кнопка Вверх
-		buf |= 1;
-	else
-		buf &= ~1;*/
-	/*if (!(PINB & (1 << 0)))
-		buf |= 1 << 3;*/
+	/*u8 buf;
+	//buf = ~PINBUTTONS;
+	//buf >>= 2;
+
+	buf = ((!(PIN_BUTTON_UP & (1 << pin_UP)))
+			| ((!(PIN_BUTTON_LEFT & (1 << pin_LEFT))) << 1)
+			| ((!(PIN_BUTTON_RIGHT & (1 << pin_RIGHT))) << 2)
+			| ((!(PIN_BUTTON_DOWN & (1 << pin_DOWN))) << 3));
 
 	switch(buf)
 	{
@@ -40,7 +39,16 @@ static u8 get_key_code(void)
 		//case 0x0f: reset(); break;  // LEFT + DOWN + RIGHT + UP
 		default: buf = keyEmpty; break;
 	}
-	return buf;
+	return buf;*/
+	if (!(PIN_BUTTON_UP & (1 << pin_UP)))
+		return keyUp;
+	if (!(PIN_BUTTON_LEFT & (1 << pin_LEFT)))
+		return keyLeft;
+	if (!(PIN_BUTTON_RIGHT & (1 << pin_RIGHT)))
+		return keyRight;
+	if (!(PIN_BUTTON_DOWN & (1 << pin_DOWN)))
+		return keyDown;
+	return keyEmpty;
 }
 
 /** Ожидает удержания кнопок заданное время

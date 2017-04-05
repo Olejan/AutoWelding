@@ -87,6 +87,10 @@ BOOL isPedal2Pressed()
 		return TRUE; // педаль нажата
 	return FALSE; // педаль отжата
 }
+BOOL isPossibleToWork()
+{// если педали нажаты и нет аварии
+	return (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE) && flags.alarm == 0;
+}
 //==========================================================================
 
 //===================================================================
@@ -122,7 +126,7 @@ u8 doPrePressing()
 			break;
 		while(!flags.halfPeriod) // ждём прихода полупериода
 		{
-			if (isPedal1Pressed() == FALSE)
+			if (isPedal1Pressed() == FALSE  || flags.alarm == 1)
 				return FALSE;
 		}
 		flags.halfPeriod = 0;
@@ -163,7 +167,7 @@ u8 doPressing()
 			break;
 		while(!flags.halfPeriod)
 		{
-			if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
+			if (isPossibleToWork())
 				return FALSE;
 		}
 		flags.halfPeriod = 0;
@@ -174,13 +178,9 @@ u8 doPressing()
 
 void impulse()
 { // пока не установится флаг - управляем трансформатором
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	while(!flags.transswitchoff)
-#else
-	while(!flags.halfPeriod)
-#endif
 	{
-		if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
+		if (isPossibleToWork())
 			break; // если педали отпустили - значит аварийная остановка
 		switchTrans(ON); // включаем трансформатор
 		if (!wait_100us()) // если прерывания на int0 не было
@@ -192,9 +192,7 @@ void impulse()
 		else
 			break;
 	}
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	flags.transswitchoff = 0;
-#endif
 	switchTrans(OFF); // отключаем трансформатор
 }
 
@@ -227,7 +225,7 @@ u8 doModulation()
 	{
 		while(!flags.halfPeriod) // и ждём передний фронт
 		{
-			if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
+			if (isPossibleToWork())
 			{
 				switchHL(pinHeatingHL, OFF);
 				return FALSE;
@@ -245,7 +243,7 @@ u8 doModulation()
 		wdt_feed();
 		while(flags.T1IsUp == 0 && flags.transswitchoff == 0)
 		{
-			if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
+			if (isPossibleToWork())
 			{
 				switchHL(pinHeatingHL, OFF);
 				TCCR1B = 0;
@@ -259,9 +257,7 @@ u8 doModulation()
 		else
 		{
 			 // если пересидели в паузе, а уже пришёл задний фронт
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 			flags.transswitchoff = 0;
-#endif
 		}
 	}
 	return TRUE;
@@ -289,7 +285,7 @@ u8 doHeating()
 	u16 heating = (u16)m_nHeating << 1;// делаю полупериоды из периодов
 	while(!flags.halfPeriod) // ждём прерывание int0
 	{
-		if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
+		if (isPossibleToWork())
 		{
 			switchHL(pinHeatingHL, OFF);
 			return FALSE;
@@ -317,7 +313,7 @@ u8 doHeating()
 		{
 			while(flags.T1IsUp == 0 && flags.transswitchoff == 0)
 			{
-				if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
+				if (isPossibleToWork())
 				{
 					switchHL(pinHeatingHL, OFF);
 					TCCR1B = 0;
@@ -335,13 +331,11 @@ u8 doHeating()
 		else
 		{
 			 // если пересидели в паузе, а уже пришёл задний фронт
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 			flags.transswitchoff = 0;
-#endif
 		}
 		while(!flags.halfPeriod) // ждём передний фронт после выключения транса по заднему фронту
 		{
-			if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
+			if (isPossibleToWork())
 			{
 				switchHL(pinHeatingHL, OFF);
 				return FALSE;
@@ -379,7 +373,7 @@ u8 doForging()
 			break;
 		while(!flags.halfPeriod)
 		{
-			if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
+			if (isPossibleToWork())
 			{
 				switchHL(pinForgingHL, OFF);
 				return FALSE;
@@ -417,7 +411,7 @@ u8 doPause()
 			break;
 		while(!flags.halfPeriod)
 		{
-			if (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE)
+			if (isPossibleToWork())
 			{
 				switchHL(pinPauseHL, OFF);
 				WriteWeldReadiness();
@@ -435,7 +429,7 @@ u8 doPause()
 
 u8 GetWeldingState()
 {
-	if (isPedal1Pressed() == FALSE)
+	if (isPedal1Pressed() == FALSE || flags.alarm == 1)
 		return WELD_HAS_BROKEN;
 	if (isPedal2Pressed() == FALSE)
 		return WELD_IS_PAUSED;
@@ -470,7 +464,7 @@ u8 DoWelding()
 					_delay_ms(5);	// защита от дребезга контактов. Без этой строки при отпускании педали 2 мог возникнуть повторный цикл сварки
 					return SIMPLE_WELD_HAS_DONE;
 				}
-				if (isPedal1Pressed() == FALSE)
+				if (isPedal1Pressed() == FALSE || flags.alarm == 1)
 					return GetWeldingState();
 				wdt_feed();
 			}

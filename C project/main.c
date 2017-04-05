@@ -19,10 +19,9 @@ volatile u32 nTimeMs = 0; // глобальный счётчик микросе�
 volatile u32 nStartTime = 0; // буфер для засекания отсчёта времени
 volatile u32 waitTime; // декриментируемый счётчик для жёстких задержек (без возможности выхода из функции задержки до её окончания)
 volatile u8 couScanKeys; // счётчик для сканирования кнопок
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 volatile u8 syncpresent = SYNC_NUM; // детектор пропадания синхроимпульса - если == 0, значит синхроимпульс пропал.
-#endif
 volatile tagFlags flags;
+u8 _nTaskAlarm = 0;
 //=========================================================================
 extern void DoMenu();
 extern u8 TaskWelding();
@@ -54,6 +53,8 @@ extern void switchHL(u8 line, u8 state);
 extern void AlarmTask();
 //=========================================================================
 
+//u8 cnt = 0;
+BOOL did = FALSE;
 ISR(TIMER0_OVF_vect)
 {
 	//static u8 i = 0;
@@ -74,13 +75,47 @@ ISR(TIMER0_OVF_vect)
 	{
 		couScanKeys = SCAN_KEY_TIME; // t = 0.1 s
 		flags.scanKey = 1;
+
+		
+		if (!(PIN_BUTTON_CURRENT & (1 << pin_CURRENT)))
+		{
+			if (/*cnt++ > 10 && */did == FALSE)
+			{
+				if (flags.currentIsEnable == 1)// если ток был разрешён
+				{// запрещаем его
+					flags.currentIsEnable = 0; // запрещаю ток
+					PORTTRANS |= 1<<pinTrans; // если был включён, выключаю трансформатор
+				#ifdef LED_COMMON_CATHODE
+					PORTLED |= 1 << pinCurrentHL;
+				#else
+					PORTLED &= ~(1 << pinCurrentHL);
+				#endif
+				}
+				else
+				{// разрешаем его
+					flags.currentIsEnable = 1; // разрешаю ток
+				#ifdef LED_COMMON_CATHODE
+					PORTLED &= ~(1 << pinCurrentHL);
+				#else
+					PORTLED |= 1 << pinCurrentHL;
+				#endif
+				}
+			did = TRUE;
+			}
+		}
+		else
+		{
+			did = FALSE;
+			//cnt = 0;
+		}
 	}
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	if(syncpresent)
 		syncpresent--;
-#endif
-	if (!(PIN_FAULT & (1<<pinFault)))
-		AlarmTask();
+	if (!(PIN_ALARM & (1<<pin_ALARM)))
+	{
+		flags.alarm = 1;
+		_nTaskAlarm = 1;
+	}
 }
 
 volatile u16 _TCNT1;
@@ -94,32 +129,27 @@ ISR (TIMER1_OVF_vect)
 
 ISR (INT0_vect) // прерывание по синхроимпульсу
 {
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
-	MCUCR ^= 1<<ISC00; // следующее прерывание по другому фронту
 	syncpresent = SYNC_NUM; // обновляю
-	// можно здесь запускать таймер на время включения диода до 0, а в процедуре обработки прерывания таймера отключать его и устанавливать флаг flags.halfPeriod = 1
-	if (MCUCR & (1<<ISC00)) // если задний фронт (ранее изменил фронт срабатывания, поэтому смотрю другое значение бита)
-	{
-		flags.syncfront = 0;
-		PORTTRANS |= 1<<pinTrans; // отключаем трансформатор 
-		flags.transswitchoff = 1;
-	}
-	else
-	{
-		flags.syncfront = 1;
-		flags.halfPeriod = 1;
-		if(flags.useT1forHeating == 1)
-		{
-			TCNT1 = _TCNT1;
-			TCCR1B = 1; // включаю T1
-		}
-	}
-#else
+	// можно здесь запускать таймер на время включения диода до 0,
+	// а в процедуре обработки прерывания таймера отключать его и устанавливать флаг flags.halfPeriod = 1
+	flags.syncfront = 1;
 	flags.halfPeriod = 1;
-#endif
+	if(flags.useT1forHeating == 1)
+	{
+		TCNT1 = _TCNT1;
+		TCCR1B = 1; // включаю T1
+	}
 }
 
 ISR (INT1_vect)
+{
+	flags.syncfront = 0;
+	PORTTRANS |= 1<<pinTrans; // отключаем трансформатор
+	flags.transswitchoff = 1;
+}
+
+#if 0
+ISR (INT2_vect)
 {
 	if (flags.currentIsEnable == 1)// если ток был разрешён
 	{// запрещаем его
@@ -139,8 +169,9 @@ ISR (INT1_vect)
 #else
 		PORTLED |= 1 << pinCurrentHL;
 #endif
-	}		
+	}
 }
+#endif
 
 ISR(BADISR_vect)
 {// если зашли по неправильному вектору
@@ -160,13 +191,8 @@ void initProc()
 	//TCCR1B = 1;//<<CS10;
 
 	PORTD = 3 << 2; // подтяжка входов прерывания
-	MCUCR = (2 << ISC10); // int1 по заднему фронту (кнопка)
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
-	MCUCR |= (1 << ISC00); // int0 по любому фронту (синхроимпульс)
-#else
-	MCUCR |= (3 << ISC00); // int0 по переднему фронту (синхроимпульс)
-#endif
-	GICR = (1 << INT0) | (1 << INT1); // разрешаю внешние прерывания
+	MCUCR = (1 << ISC11) | (3 << ISC00); // int0 по переднему фронту (синхроимпульс) и int1 по заднему (си)
+	GICR = (1 << INT0) | (1 << INT1)/* | (1 << INT2)*/; // разрешаю внешние прерывания
 
 	//SFIOR |= 1 << PUD; // отключаю внутреннюю подтяжку портов
 	DDRTRANS |= 1<<pinTrans;
@@ -177,16 +203,26 @@ void initProc()
 	PORTVALVE2 |= 1<<pinValve2;
 	DDRLED = 0xff;
 	PORTLED = ALL_LEDS_OFF; // выключить все светодиоды
-	PORTBUTTONS |= 0xf<<2; // устанавливаю подтягивающие резисторы на кнопки
+	//PORTBUTTONS |= 0xf<<2; // устанавливаю подтягивающие резисторы на кнопки
+	DDR_BUTTON_CURRENT &= ~(1 << pin_CURRENT);
+	DDR_BUTTON_UP &= ~(1 << pin_UP);
+	DDR_BUTTON_LEFT &= ~(1 << pin_LEFT);
+	DDR_BUTTON_RIGHT &= ~(1 << pin_RIGHT);
+	DDR_BUTTON_DOWN &= ~(1 << pin_DOWN);
+	PORT_BUTTON_CURRENT |= 1 << pin_CURRENT;
+	PORT_BUTTON_UP |= 1 << pin_UP;
+	PORT_BUTTON_LEFT |= 1 << pin_LEFT;
+	PORT_BUTTON_RIGHT |= 1 << pin_RIGHT;
+	PORT_BUTTON_DOWN |= 1 << pin_DOWN;
+
 	PORTPEDAL1 |= 1 << pinPedal1; // и педали
 	PORTPEDAL2 |= 1 << pinPedal2;
 
-	DDR_FAULT &= ~(1 << pinFault);
-	PORT_FAULT |= 1 << pinFault; // подтягивающий резистор
+	DDR_ALARM &= ~(1 << pin_ALARM);
+	PORT_ALARM |= 1 << pin_ALARM; // подтягивающий резистор
 	DDR_IND_BRT |= 1 << pinIndBrt;
 	PORT_IND_BRT |= 1 << pinIndBrt;
 	
-	GICR |= 1<<INT0; // включение INT0
 	asm("sei");
 }
 
@@ -197,12 +233,13 @@ void initVars()
 	flags.currentIsEnable = 1; // разрешаю ток
 	switchHL(pinCurrentHL, ON);
 }
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 extern const char _SignalAbscent[], _Synch[], _Empty[],
 	_Attention[],
 	_Alarm[],
 	_Checkup[],
-	_Equipnent[];
+	_Equipnent[],
+	_PedalIsPressed[],
+	_ReleaseIt[];
 extern void WriteMessage(const char* str1, const char* str2);
 void CheckSynchroImpulse()
 {
@@ -237,8 +274,7 @@ void CheckSynchroImpulse()
 		cnt = 0;
 	}
 }
-#endif
-void WriteMsgAndBlinkLED(u8 a_var)
+/*void WriteMsgAndBlinkLED(u8 a_var)
 {
 	wdt_feed();
 	if (a_var == 0)
@@ -251,18 +287,120 @@ void WriteMsgAndBlinkLED(u8 a_var)
 		_delay_ms(500);
 		wdt_feed();
 	}
-}
-void AlarmTask()
+}*/
+
+void StartTaskAlarm()
 {
-	wdt_start(wdt_2s);
-	switchTrans(OFF);
-	switchValve1(OFF);
-	switchValve2(OFF);
-	while(1)
-	{
-		WriteMsgAndBlinkLED(0);
-		WriteMsgAndBlinkLED(1);
+	_nTaskAlarm = 1;
+}
+void StopTaskAlarm()
+{
+	flags.alarm = 0;
+	_nTaskAlarm = 0;
+	SwitchAllLED(OFF);
+	if (flags.currentIsEnable == 1)// если ток был разрешён
+	{// разрешаем его
+#ifdef LED_COMMON_CATHODE
+		PORTLED &= ~(1 << pinCurrentHL);
+#else
+		PORTLED |= 1 << pinCurrentHL;
+#endif
 	}
+	else
+	{// запрещаем его
+		PORTTRANS |= 1<<pinTrans; // если был включён, выключаю трансформатор
+#ifdef LED_COMMON_CATHODE
+		PORTLED |= 1 << pinCurrentHL;
+#else
+		PORTLED &= ~(1 << pinCurrentHL);
+#endif
+	}
+
+	switchModeHL(curMode.get());
+	//SetMenu(&mPrograms);
+	wdt_start(wdt_60ms);
+}
+BOOL NextCase()
+{
+	if ((flags.scanKey && get_key() != keyEmpty) || !(PIN_BUTTON_CURRENT & (1 << pin_CURRENT)))
+	{
+		StopTaskAlarm();
+		return FALSE;
+	}
+	if (waitTime > 0)
+		return FALSE;
+	return TRUE;
+}
+void TaskAlarm()
+{
+	u8 i = 0;
+	while (1)
+	{
+		switch (_nTaskAlarm)
+		{
+			case 0:
+				return;
+			case 1:
+				wdt_start(wdt_2s);
+				//StopTaskWelding();
+				i = 0;
+				waitTime = 0;
+				_nTaskAlarm++;
+				break;
+			case 2:
+				if (NextCase() == FALSE)
+					break;
+				wdt_feed();
+				waitTime = 500;
+				WriteMessage(_Attention, _Alarm);
+				SwitchAllLED(i%2);
+				i++;
+				if (i > 3)
+				{
+					_nTaskAlarm++;
+					i = 0;
+				}
+				break;
+			case 3:
+				if (NextCase() == FALSE)
+					break;
+				wdt_feed();
+				waitTime = 500;
+				WriteMessage(_Checkup, _Equipnent);
+				SwitchAllLED(i%2);
+				i++;
+				if (i > 3)
+				{
+					_nTaskAlarm--;
+					i = 0;
+				}
+				break;
+		}
+	}
+}
+/*u8 cnt = 0;
+BOOL did = FALSE;
+void TaskCurrent()
+{
+	if (!(PIN_BUTTON_CURRENT & (1 << pin_CURRENT)))
+	{
+		if (cnt++ > 10 && did == FALSE)
+		{
+			switchCurrent();
+			did = TRUE;
+		}
+	}
+	else
+	{
+		did = FALSE;
+		cnt = 0;
+	}
+}*/
+void MainTask()
+{
+	if (flags.alarm == 1)
+		TaskAlarm();
+	//TaskCurrent();
 }
 void init()
 {
@@ -271,17 +409,40 @@ void init()
 	initProc();
 	initVars();
 	initParams();
-#ifndef _DEBUG_
 	lcd_init(LCD_DISP_ON);
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
-	CheckSynchroImpulse();                                          
-#endif
+	if (isPedal1Pressed() == TRUE || isPedal2Pressed() == TRUE)
+	{
+		WriteMessage(_PedalIsPressed, _ReleaseIt);
+		while (isPedal1Pressed() == TRUE || isPedal2Pressed() == TRUE)
+		{
+			wdt_feed();
+		}
+	}
+#ifndef _DEBUG_
+	CheckSynchroImpulse();
 	//init_lcd_simbols();
-//#ifdef _DEMO_VERSION_
-	//SplashScreen();
-//#endif // _DEMO_VERSION_
+	SplashScreen();
 #endif // _DEBUG_
 	SetMenu(&mPrograms);
+}
+
+void RefreshSqreen(u8 a_menu)
+{
+	const MenuItem * addr;
+	switch (a_menu)
+	{
+		case idPrograms: addr = &mPrograms; break;
+		case idChooseMode: addr = &mParamMode; break;
+		case idChoosePause: addr = &mParamPause; break;
+		case idChoosePrePressing: addr = &mParamPrePressing; break;
+		case idChoosePressing: addr = &mParamPressing; break;
+		case idChooseHeating: addr = &mParamHeating; break;
+		case idChooseForging: addr = &mParamForging; break;
+		case idChooseModulation: addr = &mParamModulation; break;
+		case idChooseCurrent: addr = &mParamCurrent; break;
+		default: addr = &mPrograms; break;
+	}
+	SetMenu(addr);
 }
 
 int main()
@@ -304,24 +465,17 @@ int main()
 			while(isPedal1Pressed())
 			{
 				/*u8 res = */TaskWelding();
+				if (flags.alarm == 1)
+					break;
 				wdt_feed();
 			}
 			StopTaskWelding();
-			const MenuItem * addr;
-			switch (menu)
-			{
-				case idPrograms: addr = &mPrograms; break;
-				case idChooseMode: addr = &mParamMode; break;
-				case idChoosePause: addr = &mParamPause; break;
-				case idChoosePrePressing: addr = &mParamPrePressing; break;
-				case idChoosePressing: addr = &mParamPressing; break;
-				case idChooseHeating: addr = &mParamHeating; break;
-				case idChooseForging: addr = &mParamForging; break;
-				case idChooseModulation: addr = &mParamModulation; break;
-				case idChooseCurrent: addr = &mParamCurrent; break;
-				default: addr = &mPrograms; break;		
-			}
-			SetMenu(addr);
+			RefreshSqreen(menu);
+		}
+		if (flags.alarm == 1)
+		{
+			TaskAlarm();
+			RefreshSqreen(menu);
 		}
 	}
 	return 0;

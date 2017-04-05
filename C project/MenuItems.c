@@ -34,17 +34,17 @@ __attribute__((section(".eeprom")))u8 unused_var = 0;
 __attribute__((section(".eeprom")))
 u8 eeMass[programNumber][paramNum] =
 {
-// {PrePressing,	Pressing,	Modulation,	Current,	Heating,	Forging,	Mode,			Pause}
-	{10,			11,			1,			0,			40,			50,			SIMPLE_MODE,	DEF_PAUSE},
-	{20,			21,			2,			9,			41,			51,			SIMPLE_MODE,	DEF_PAUSE},
-	{30,			31,			3,			8,			42,			52,			SIMPLE_MODE,	DEF_PAUSE},
-	{40,			41,			4,			7,			43,			53,			SIMPLE_MODE,	DEF_PAUSE},
-	{50,			51,			5,			6,			44,			54,			SIMPLE_MODE,	DEF_PAUSE},
-	{60,			61,			6,			5,			45,			55,			SIMPLE_MODE,	DEF_PAUSE},
-	{70,			71,			7,			4,			46,			56,			SIMPLE_MODE,	DEF_PAUSE},
-	{80,			81,			8,			3,			47,			57,			SIMPLE_MODE,	DEF_PAUSE},
-	{90,			91,			9,			2,			48,			58,			SIMPLE_MODE,	DEF_PAUSE},
-	{11,			21,			0,			1,			49,			59,			SIMPLE_MODE,	DEF_PAUSE}
+//	{PrePressing,		Pressing,		Modulation,		Current,		Heating,		Forging,		Mode,			Pause}
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE}
 };
 __attribute__((section(".eeprom")))u8 ee_startprg = 2;
 __attribute__((section(".eeprom")))u8 ee_pedalnum = 2;
@@ -92,8 +92,6 @@ const char PROGMEM
 	_Pause_[]			= "   Pause        ",
 	_Splash1[]			= " Welcome to the ",
 	_Splash2[]			= "   auto welding!",
-	_Demo1[]			= " Demo version   ",
-	_Demo2[]			= "   Demo version ",
 	_SignalAbscent[]	= "Synchronization ",
 	_Synch[]			= "      is absent!",
 	_On[]				= " On",
@@ -101,9 +99,11 @@ const char PROGMEM
 	_Attention[]		= "ATTENTION       ",
 	_Alarm[]			= "        ALARM!!!",
 	_Checkup[]			= "Check up        ",
-	_Equipnent[]		= "    an equipment";
+	_Equipnent[]		= "    an equipment"
+	_PedalIsPressed[]	= "Pedal is pressed",
+	_ReleaseIt[]		= "  - release it  ";
 #else
-	_ViewInfo1[]		= "Версия 29.03.17R",
+	_ViewInfo1[]		= "Версия 05.04.17R",
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSeam[]			= "Режим Шовный    ",
 	_InfoSimple[]		= "Режим Одиночный ",
@@ -142,8 +142,6 @@ const char PROGMEM
 	_Pause_[]			= "   Пауза        ",
 	_Splash1[]			= "Да будет ваш    ",
 	_Splash2[]			= "  шов крепким!!!",
-	_Demo1[]			= " Демо версия    ",
-	_Demo2[]			= "   Демо версия  ",
 	_SignalAbscent[]	= "Нет сигнала     ",
 	_Synch[]			= "  синхронизации!",
 	_On[]				= " Вкл",
@@ -151,7 +149,9 @@ const char PROGMEM
 	_Attention[]		= "ВНИМАНИЕ        ",
 	_Alarm[]			= "       АВАРИЯ!!!",
 	_Checkup[]			= "Проверьте       ",
-	_Equipnent[]		= "    оборудование";
+	_Equipnent[]		= "    оборудование",
+	_PedalIsPressed[]	= "Нажата педаль - ",
+	_ReleaseIt[]		= "    отпустите е$";
 
 #endif
 
@@ -196,6 +196,7 @@ extern void UpdateParams();
 extern volatile tagFlags flags;
 extern CURPRG curPrg;
 extern CURMODE curMode;
+extern u8 _nTaskAlarm;
 extern void UpdateLcdParam(u8 a_ParamsId, u8 a_nVal);
 extern u8 GetValue(u8 a_nParamId);
 extern void SetValue(u8 a_nParamId, u8 a_nVal);

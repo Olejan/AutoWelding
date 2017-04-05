@@ -1,9 +1,7 @@
 //#define _DEBUG_
-//#define _DEMO_VERSION_
 #define _RUSSIAN_VERSION_
 #define WDT_ENABLE
 #define LED_COMMON_CATHODE	/* светодиоды подключены с общим катодом */
-#define SWITCH_OFF_TRANS_BY_BACK_FRONT
 
 #ifdef _RUSSIAN_VERSION_
 //–усские буквы
@@ -80,13 +78,8 @@ enum tag
 	pinPedal1	= 6, // PORTB.6
 	pinPedal2	= 7, // PORTB.7
 	pinIndBrt	= 7, // PORTD.7
-	pinFault	= 0, // PORTA.0
 	firstPrg	= 0, // перва€ программа
-#ifdef _DEMO_VERSION_
-	lastPrg		= 9,
-#else
-	lastPrg		= 9, // последн€€ программ
-#endif
+	lastPrg		= 9, // крайн€€ программ
 	minPedalNum	= 1,
 	maxPedalNum	= 2,
 	programNumber = lastPrg + 1,
@@ -122,7 +115,29 @@ enum tagHL
 #define PORTPEDAL1	PORTB	/* порт педали дл€ установки подт€гивающих резисторов */
 #define PORTPEDAL2	PORTB
 
-#define DDRBUTTONS	DDRB	/* */
+/* buttons*/
+#define DDR_BUTTON_UP	DDRB
+#define DDR_BUTTON_LEFT	DDRB
+#define DDR_BUTTON_RIGHT	DDRB
+#define DDR_BUTTON_DOWN	DDRB
+#define PIN_BUTTON_UP	PINB
+#define PIN_BUTTON_LEFT	PINB
+#define PIN_BUTTON_RIGHT	PINB
+#define PIN_BUTTON_DOWN	PINB
+#define PORT_BUTTON_UP	PORTB
+#define PORT_BUTTON_LEFT	PORTB
+#define PORT_BUTTON_RIGHT	PORTB
+#define PORT_BUTTON_DOWN	PORTB
+#define pin_UP		2
+#define pin_LEFT	3
+#define pin_RIGHT	4
+#define pin_DOWN	5
+
+#define DDR_BUTTON_CURRENT	DDRD
+#define PIN_BUTTON_CURRENT	PIND
+#define PORT_BUTTON_CURRENT	PORTD
+#define pin_CURRENT	5
+
 #define PINBUTTONS	PINB
 #define PORTBUTTONS	PORTB
 
@@ -136,9 +151,10 @@ enum tagHL
 #define PORTLED		PORTC	/* порт светодиодов */
 
 /* порт входа "ќшибка" */
-#define PORT_FAULT	PORTA
-#define DDR_FAULT	DDRA
-#define PIN_FAULT	PINA
+#define PORT_ALARM	PORTD
+#define DDR_ALARM	DDRD
+#define PIN_ALARM	PIND
+#define pin_ALARM	4
 /* порт регул€тора подсветки индикатора */
 #define PORT_IND_BRT	PORTD
 #define DDR_IND_BRT		DDRD
@@ -176,13 +192,13 @@ enum tagParams
 	maxForging		= 250,
 	MAX_PAUSE		= 250,
 
-	defPrePressing	= 30,
-	defPressing		= 3,
-	defModulation	= 5,
+	defPrePressing	= 100,
+	defPressing		= 20,
+	defModulation	= 9,
 	defCurrent		= 5,
-	defHeating		= 50,
-	defForging		= 50,
-	DEF_PAUSE		= 7,
+	defHeating		= 30,
+	defForging		= 10,
+	DEF_PAUSE		= 25,
 };
 //!!// addr... и param... взаимозависимы, смотри welding.c GetValue()
 enum tagEEPROMAddr
@@ -245,6 +261,7 @@ typedef struct
 	u16 currentIsEnable	:1; // выход тока открыт/закрыт (1/0)
 	u16 T1IsUp	:1;	// прошло 100мкс
 	u16 useT1forHeating	:1;	// сейчас задача нагрева
+	u16 alarm		:1;	// зарегистрированно состо€ние аварии
 }tagFlags;
 
 enum tagIds

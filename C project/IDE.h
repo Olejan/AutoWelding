@@ -23,3 +23,6 @@ extern void WriteEmptySqreen();
 extern BOOL isPedal1Pressed();
 extern BOOL isPedal2Pressed();
 extern void SwitchAllLED(u8 a_state);
+extern void switchCurrent();
+extern void switchModeHL(u8 a_mode);
+extern CURMODE curMode;
