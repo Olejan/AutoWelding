@@ -103,7 +103,7 @@ const char PROGMEM
 	_PedalIsPressed[]	= "Pedal is pressed",
 	_ReleaseIt[]		= "  - release it  ";
 #else
-	_ViewInfo1[]		= "Версия 05.04.17R",
+	_ViewInfo1[]		= "Версия 18.04.17R",
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSeam[]			= "Режим Шовный    ",
 	_InfoSimple[]		= "Режим Одиночный ",

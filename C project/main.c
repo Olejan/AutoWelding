@@ -77,27 +77,27 @@ ISR(TIMER0_OVF_vect)
 		flags.scanKey = 1;
 
 		
-		if (!(PIN_BUTTON_CURRENT & (1 << pin_CURRENT)))
+		if (!(PIN_BUTTON_CURRENT & (1 << pin_BUTTON_CURRENT)))
 		{
 			if (/*cnt++ > 10 && */did == FALSE)
 			{
 				if (flags.currentIsEnable == 1)// если ток был разрешён
 				{// запрещаем его
 					flags.currentIsEnable = 0; // запрещаю ток
-					PORTTRANS |= 1<<pinTrans; // если был включён, выключаю трансформатор
+					PORT_TRANS |= 1<<pin_TRANS; // если был включён, выключаю трансформатор
 				#ifdef LED_COMMON_CATHODE
-					PORTLED |= 1 << pinCurrentHL;
+					PORT_LED |= 1 << pin_CURRENT_HL;
 				#else
-					PORTLED &= ~(1 << pinCurrentHL);
+					PORT_LED &= ~(1 << pin_CURRENT_HL);
 				#endif
 				}
 				else
 				{// разрешаем его
 					flags.currentIsEnable = 1; // разрешаю ток
 				#ifdef LED_COMMON_CATHODE
-					PORTLED &= ~(1 << pinCurrentHL);
+					PORT_LED &= ~(1 << pin_CURRENT_HL);
 				#else
-					PORTLED |= 1 << pinCurrentHL;
+					PORT_LED |= 1 << pin_CURRENT_HL;
 				#endif
 				}
 			did = TRUE;
@@ -123,7 +123,7 @@ ISR (TIMER1_OVF_vect)
 {
 	//TCNT1 = _TCNT1;
 	flags.T1IsUp = 1;
-	//PORTTRANS ^= 1<<pinTrans;
+	//PORT_TRANS ^= 1<<pin_TRANS;
 	TCCR1B = 0; // выключаю T1
 }
 
@@ -144,7 +144,7 @@ ISR (INT0_vect) // прерывание по синхроимпульсу
 ISR (INT1_vect)
 {
 	flags.syncfront = 0;
-	PORTTRANS |= 1<<pinTrans; // отключаем трансформатор
+	PORT_TRANS |= 1<<pin_TRANS; // отключаем трансформатор
 	flags.transswitchoff = 1;
 }
 
@@ -165,9 +165,9 @@ ISR (INT2_vect)
 	{// разрешаем его
 		flags.currentIsEnable = 1; // разрешаю ток
 #ifdef LED_COMMON_CATHODE
-		PORTLED &= ~(1 << pinCurrentHL);
+		PORT_LED &= ~(1 << pin_CURRENT_HL);
 #else
-		PORTLED |= 1 << pinCurrentHL;
+		PORT_LED |= 1 << pin_CURRENT_HL;
 #endif
 	}
 }
@@ -195,33 +195,34 @@ void initProc()
 	GICR = (1 << INT0) | (1 << INT1)/* | (1 << INT2)*/; // разрешаю внешние прерывания
 
 	//SFIOR |= 1 << PUD; // отключаю внутреннюю подтяжку портов
-	DDRTRANS |= 1<<pinTrans;
-	PORTTRANS |= 1<<pinTrans;
-	DDRVALVE1 |= 1<<pinValve1;
-	PORTVALVE1 |= 1<<pinValve1;
-	DDRVALVE2 |= 1<<pinValve2;
-	PORTVALVE2 |= 1<<pinValve2;
-	DDRLED = 0xff;
-	PORTLED = ALL_LEDS_OFF; // выключить все светодиоды
-	//PORTBUTTONS |= 0xf<<2; // устанавливаю подтягивающие резисторы на кнопки
-	DDR_BUTTON_CURRENT &= ~(1 << pin_CURRENT);
+	DDR_TRANS |= 1<<pin_TRANS;
+	PORT_TRANS |= 1<<pin_TRANS;
+	DDR_VALVE1 |= 1<<pin_VALVE1;
+	PORT_VALVE1 |= 1<<pin_VALVE1;
+	DDR_VALVE2 |= 1<<pin_VALVE2;
+	PORT_VALVE2 |= 1<<pin_VALVE2;
+	DDR_LED = 0xff;
+	PORT_LED = ALL_LEDS_OFF; // выключить все светодиоды
+	// настраиваю порты кнопок на вход
+	DDR_BUTTON_CURRENT &= ~(1 << pin_BUTTON_CURRENT);
 	DDR_BUTTON_UP &= ~(1 << pin_UP);
 	DDR_BUTTON_LEFT &= ~(1 << pin_LEFT);
 	DDR_BUTTON_RIGHT &= ~(1 << pin_RIGHT);
 	DDR_BUTTON_DOWN &= ~(1 << pin_DOWN);
-	PORT_BUTTON_CURRENT |= 1 << pin_CURRENT;
+	// устанавливаю подтягивающие резисторы на кнопки
+	PORT_BUTTON_CURRENT |= 1 << pin_BUTTON_CURRENT;
 	PORT_BUTTON_UP |= 1 << pin_UP;
 	PORT_BUTTON_LEFT |= 1 << pin_LEFT;
 	PORT_BUTTON_RIGHT |= 1 << pin_RIGHT;
 	PORT_BUTTON_DOWN |= 1 << pin_DOWN;
 
-	PORTPEDAL1 |= 1 << pinPedal1; // и педали
-	PORTPEDAL2 |= 1 << pinPedal2;
+	PORT_PEDAL1 |= 1 << pin_PEDAL1; // и педали
+	PORT_PEDAL2 |= 1 << pin_PEDAL2;
 
 	DDR_ALARM &= ~(1 << pin_ALARM);
 	PORT_ALARM |= 1 << pin_ALARM; // подтягивающий резистор
-	DDR_IND_BRT |= 1 << pinIndBrt;
-	PORT_IND_BRT |= 1 << pinIndBrt;
+	DDR_IND_BRT |= 1 << pin_IND_BRT;
+	PORT_IND_BRT |= 1 << pin_IND_BRT;
 	
 	asm("sei");
 }
@@ -231,7 +232,7 @@ void initVars()
 	couScanKeys = SCAN_KEY_TIME;
 	//waitTime = 1000;
 	flags.currentIsEnable = 1; // разрешаю ток
-	switchHL(pinCurrentHL, ON);
+	switchHL(pin_CURRENT_HL, ON);
 }
 extern const char _SignalAbscent[], _Synch[], _Empty[],
 	_Attention[],
@@ -301,18 +302,18 @@ void StopTaskAlarm()
 	if (flags.currentIsEnable == 1)// если ток был разрешён
 	{// разрешаем его
 #ifdef LED_COMMON_CATHODE
-		PORTLED &= ~(1 << pinCurrentHL);
+		PORT_LED &= ~(1 << pin_CURRENT_HL);
 #else
-		PORTLED |= 1 << pinCurrentHL;
+		PORT_LED |= 1 << pin_CURRENT_HL;
 #endif
 	}
 	else
 	{// запрещаем его
-		PORTTRANS |= 1<<pinTrans; // если был включён, выключаю трансформатор
+		PORT_TRANS |= 1<<pin_TRANS; // если был включён, выключаю трансформатор
 #ifdef LED_COMMON_CATHODE
-		PORTLED |= 1 << pinCurrentHL;
+		PORT_LED |= 1 << pin_CURRENT_HL;
 #else
-		PORTLED &= ~(1 << pinCurrentHL);
+		PORT_LED &= ~(1 << pin_CURRENT_HL);
 #endif
 	}
 
@@ -322,7 +323,7 @@ void StopTaskAlarm()
 }
 BOOL NextCase()
 {
-	if ((flags.scanKey && get_key() != keyEmpty) || !(PIN_BUTTON_CURRENT & (1 << pin_CURRENT)))
+	if ((flags.scanKey && get_key() != keyEmpty) || !(PIN_BUTTON_CURRENT & (1 << pin_BUTTON_CURRENT)))
 	{
 		StopTaskAlarm();
 		return FALSE;
@@ -382,7 +383,7 @@ void TaskAlarm()
 BOOL did = FALSE;
 void TaskCurrent()
 {
-	if (!(PIN_BUTTON_CURRENT & (1 << pin_CURRENT)))
+	if (!(PIN_BUTTON_CURRENT & (1 << pin_BUTTON_CURRENT)))
 	{
 		if (cnt++ > 10 && did == FALSE)
 		{

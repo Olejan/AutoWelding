@@ -21,25 +21,6 @@
  */
 static u8 get_key_code(void)
 {
-	/*u8 buf;
-	//buf = ~PINBUTTONS;
-	//buf >>= 2;
-
-	buf = ((!(PIN_BUTTON_UP & (1 << pin_UP)))
-			| ((!(PIN_BUTTON_LEFT & (1 << pin_LEFT))) << 1)
-			| ((!(PIN_BUTTON_RIGHT & (1 << pin_RIGHT))) << 2)
-			| ((!(PIN_BUTTON_DOWN & (1 << pin_DOWN))) << 3));
-
-	switch(buf)
-	{
-		case 1: buf = keyUp; break;
-		case 2: buf = keyLeft; break;
-		case 4: buf = keyRight; break;
-		case 8: buf = keyDown; break;
-		//case 0x0f: reset(); break;  // LEFT + DOWN + RIGHT + UP
-		default: buf = keyEmpty; break;
-	}
-	return buf;*/
 	if (!(PIN_BUTTON_UP & (1 << pin_UP)))
 		return keyUp;
 	if (!(PIN_BUTTON_LEFT & (1 << pin_LEFT)))

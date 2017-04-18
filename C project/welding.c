@@ -77,19 +77,19 @@ BOOL isPedal1Pressed()
 {
 	if (m_nPedalNum == 1 || m_nPrePressing == 0)
 		return isPedal2Pressed();
-	if(!(PINPEDAL1 & (1<<pinPedal1)))
+	if(!(PIN_PEDAL1 & (1<<pin_PEDAL1)))
 		return TRUE; // педаль предварительного сжатия нажата
 	return FALSE; // педаль предварительного сжатия отжата
 }
 BOOL isPedal2Pressed()
 {
-	if(!(PINPEDAL2 & (1<<pinPedal2)))
+	if(!(PIN_PEDAL2 & (1<<pin_PEDAL2)))
 		return TRUE; // педаль нажата
 	return FALSE; // педаль отжата
 }
-BOOL isPossibleToWork()
+BOOL isImpossibleToWork()
 {// если педали нажаты и нет аварии
-	return (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE) && flags.alarm == 0;
+	return (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE) || flags.alarm == 1;
 }
 //==========================================================================
 
@@ -167,7 +167,7 @@ u8 doPressing()
 			break;
 		while(!flags.halfPeriod)
 		{
-			if (isPossibleToWork())
+			if (isImpossibleToWork())
 				return FALSE;
 		}
 		flags.halfPeriod = 0;
@@ -180,7 +180,7 @@ void impulse()
 { // пока не установится флаг - управляем трансформатором
 	while(!flags.transswitchoff)
 	{
-		if (isPossibleToWork())
+		if (isImpossibleToWork())
 			break; // если педали отпустили - значит аварийная остановка
 		switchTrans(ON); // включаем трансформатор
 		if (!wait_100us()) // если прерывания на int0 не было
@@ -211,7 +211,7 @@ u8 doModulation()
 	//float fstep = _CurrentPauseTCNT / (m_nModulation + 1); // расчитываю шаг приращения константы для увеличения тока
 	u8 cnt = /*m_nModulation;/*/ 1;
 	_TCNT1 = 25535 + step * cnt; // 0xFFFF - 40000 + step * cnt
-	switchHL(pinHeatingHL, ON); // включение светодиода нагрева
+	switchHL(pin_HEATING_HL, ON); // включение светодиода нагрева
 	flags.halfPeriod = 0;
 	flags.useT1forHeating = 1;
 	if (m_nModulation == 0)
@@ -225,9 +225,9 @@ u8 doModulation()
 	{
 		while(!flags.halfPeriod) // и ждём передний фронт
 		{
-			if (isPossibleToWork())
+			if (isImpossibleToWork())
 			{
-				switchHL(pinHeatingHL, OFF);
+				switchHL(pin_HEATING_HL, OFF);
 				return FALSE;
 			}
 		}
@@ -243,9 +243,9 @@ u8 doModulation()
 		wdt_feed();
 		while(flags.T1IsUp == 0 && flags.transswitchoff == 0)
 		{
-			if (isPossibleToWork())
+			if (isImpossibleToWork())
 			{
-				switchHL(pinHeatingHL, OFF);
+				switchHL(pin_HEATING_HL, OFF);
 				TCCR1B = 0;
 				return FALSE;
 			}
@@ -285,9 +285,9 @@ u8 doHeating()
 	u16 heating = (u16)m_nHeating << 1;// делаю полупериоды из периодов
 	while(!flags.halfPeriod) // ждём прерывание int0
 	{
-		if (isPossibleToWork())
+		if (isImpossibleToWork())
 		{
-			switchHL(pinHeatingHL, OFF);
+			switchHL(pin_HEATING_HL, OFF);
 			return FALSE;
 		}
 	}
@@ -313,9 +313,9 @@ u8 doHeating()
 		{
 			while(flags.T1IsUp == 0 && flags.transswitchoff == 0)
 			{
-				if (isPossibleToWork())
+				if (isImpossibleToWork())
 				{
-					switchHL(pinHeatingHL, OFF);
+					switchHL(pin_HEATING_HL, OFF);
 					TCCR1B = 0;
 					return FALSE;
 				}
@@ -335,16 +335,16 @@ u8 doHeating()
 		}
 		while(!flags.halfPeriod) // ждём передний фронт после выключения транса по заднему фронту
 		{
-			if (isPossibleToWork())
+			if (isImpossibleToWork())
 			{
-				switchHL(pinHeatingHL, OFF);
+				switchHL(pin_HEATING_HL, OFF);
 				return FALSE;
 			}
 		}
 		flags.halfPeriod = 0;
 		flags.T1IsUp = 0;
 	}
-	switchHL(pinHeatingHL, OFF);
+	switchHL(pin_HEATING_HL, OFF);
 	return TRUE;
 }
 
@@ -354,7 +354,7 @@ u8 doForging()
 	BOOL bToWrite = FALSE;
 	wdt_start(wdt_60ms);
 	setScreen(scrForging);
-	switchHL(pinForgingHL, ON);
+	switchHL(pin_FORGING_HL, ON);
 	u16 forging = m_nForging << 1;
 	u8 towrite = m_nForging;
 	//if (forging > TIME_TO_WRITE)
@@ -373,16 +373,16 @@ u8 doForging()
 			break;
 		while(!flags.halfPeriod)
 		{
-			if (isPossibleToWork())
+			if (isImpossibleToWork())
 			{
-				switchHL(pinForgingHL, OFF);
+				switchHL(pin_FORGING_HL, OFF);
 				return FALSE;
 			}
 		}
 		flags.halfPeriod = 0;
 		wdt_feed();
 	}
-	switchHL(pinForgingHL, OFF);
+	switchHL(pin_FORGING_HL, OFF);
 	return TRUE;
 }
 
@@ -396,7 +396,7 @@ u8 doPause()
 	//if (pause > TIME_TO_WRITE)
 		bToWrite = TRUE;
 	setScreen(scrPause);
-	switchHL(pinPauseHL, ON);
+	switchHL(pin_PAUSE_HL, ON);
 	while(1)
 	{
 		if (bToWrite)
@@ -411,9 +411,9 @@ u8 doPause()
 			break;
 		while(!flags.halfPeriod)
 		{
-			if (isPossibleToWork())
+			if (isImpossibleToWork())
 			{
-				switchHL(pinPauseHL, OFF);
+				switchHL(pin_PAUSE_HL, OFF);
 				WriteWeldReadiness();
 				return FALSE;
 			}
@@ -421,7 +421,7 @@ u8 doPause()
 		flags.halfPeriod = 0;
 		wdt_feed();
 	}
-	switchHL(pinPauseHL, OFF);
+	switchHL(pin_PAUSE_HL, OFF);
 	if (isPedal2Pressed() == FALSE)
 		WriteWeldReadiness();	// готовность к сварке на экран
 	return TRUE;
@@ -449,7 +449,7 @@ u8 DoWelding()
 			return GetWeldingState();
 		res = doForging(); // проковка сварной точки
 		//switchValve2(OFF);
-		switchHL(pinForgingHL, OFF);
+		switchHL(pin_FORGING_HL, OFF);
 		if (res == FALSE)
 			return GetWeldingState();
 		if (m_nMode == SIMPLE_MODE)

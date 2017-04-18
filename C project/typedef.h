@@ -2,6 +2,7 @@
 #define _RUSSIAN_VERSION_
 #define WDT_ENABLE
 #define LED_COMMON_CATHODE	/* светодиоды подключены с общим катодом */
+#define MVL /*Версия распиновки Моя и В.Метелицы*/
 
 #ifdef _RUSSIAN_VERSION_
 //Русские буквы
@@ -72,12 +73,6 @@ enum tag
 {
 	OFF,
 	ON,
-	pinTrans	= 6,// PORTD, // PORTD.0
-	pinValve1	= 0, // PORTB.0
-	pinValve2	= 1, // PORTB.1
-	pinPedal1	= 6, // PORTB.6
-	pinPedal2	= 7, // PORTB.7
-	pinIndBrt	= 7, // PORTD.7
 	firstPrg	= 0, // первая программа
 	lastPrg		= 9, // крайняя программ
 	minPedalNum	= 1,
@@ -93,14 +88,6 @@ enum tag
 
 enum tagHL
 {
-	pinPrePressingHL	= 7,
-	pinPressingHL		= 6,
-	pinHeatingHL		= 5,
-	pinForgingHL		= 4,
-	pinPauseHL			= 3,
-	pinSimpleHL			= 2,
-	pinAutoHL			= 1,
-	pinCurrentHL		= 0,
 #ifdef LED_COMMON_CATHODE
 	ALL_LEDS_OFF		= 0xff,
 #else
@@ -108,12 +95,19 @@ enum tagHL
 #endif
 };
 
-#define PINPEDAL1	PINB	/* пин педали предварительного сжатия */
-#define PINPEDAL2	PINB	/* пин педали */
-#define DDRPEDAL1	DDRB	/* direct порт педали предварительного сжатия */
-#define DDRPEDAL2	DDRB	/* direct порт педали */
-#define PORTPEDAL1	PORTB	/* порт педали для установки подтягивающих резисторов */
-#define PORTPEDAL2	PORTB
+#ifdef MVL
+//-----------------------------------------------------------
+// Версия распиновки Моя и В.Метелицы
+//-----------------------------------------------------------
+/*Педали*/
+#define PIN_PEDAL1	PINB	/* пин педали предварительного сжатия */
+#define PIN_PEDAL2	PINB	/* пин педали */
+#define DDR_PEDAL1	DDRB	/* direct порт педали предварительного сжатия */
+#define DDR_PEDAL2	DDRB	/* direct порт педали */
+#define PORT_PEDAL1	PORTB	/* порт педали для установки подтягивающих резисторов */
+#define PORT_PEDAL2	PORTB
+#define pin_PEDAL1	6
+#define pin_PEDAL2	7
 
 /* buttons*/
 #define DDR_BUTTON_UP	DDRB
@@ -136,29 +130,128 @@ enum tagHL
 #define DDR_BUTTON_CURRENT	DDRD
 #define PIN_BUTTON_CURRENT	PIND
 #define PORT_BUTTON_CURRENT	PORTD
-#define pin_CURRENT	5
+#define pin_BUTTON_CURRENT	5
 
-#define PINBUTTONS	PINB
-#define PORTBUTTONS	PORTB
+/* порт трансформатора */
+#define DDR_TRANS	DDRD
+#define PORT_TRANS	PORTD
+#define PIN_TRANS	PIND
+#define pin_TRANS	6
 
-#define DDRTRANS	DDRD
-#define PORTTRANS	PORTD	/* порт трансформатора */
-#define DDRVALVE1	DDRB	/* direct порт клапана предварительного сжатия */
-#define DDRVALVE2	DDRB	/* direct порт клапана */
-#define PORTVALVE1	PORTB	/* порт клапана предварительного сжатия */
-#define PORTVALVE2	PORTB	/* порт клапана */
-#define DDRLED		DDRC
-#define PORTLED		PORTC	/* порт светодиодов */
+/*Клапаны*/
+#define DDR_VALVE1	DDRB	/* direct порт клапана предварительного сжатия */
+#define DDR_VALVE2	DDRB	/* direct порт клапана */
+#define PORT_VALVE1	PORTB	/* порт клапана предварительного сжатия */
+#define PORT_VALVE2	PORTB	/* порт клапана */
+#define PIN_VALVE1	PINB
+#define PIN_VALVE2	PINB
+#define pin_VALVE1	0
+#define pin_VALVE2	1
+
+/*Светодиоды*/
+#define DDR_LED			DDRC
+#define PORT_LED		PORTC
+#define PIN_LED			PINC
+#define pin_PRE_PRESSING_HL	7
+#define pin_PRESSING_HL		6
+#define pin_HEATING_HL		5
+#define pin_FORGING_HL		4
+#define pin_PAUSE_HL		3
+#define pin_SIMPLE_HL		2
+#define pin_AUTO_HL			1
+#define pin_CURRENT_HL		0
 
 /* порт входа "Ошибка" */
 #define PORT_ALARM	PORTD
 #define DDR_ALARM	DDRD
 #define PIN_ALARM	PIND
 #define pin_ALARM	4
+
 /* порт регулятора подсветки индикатора */
 #define PORT_IND_BRT	PORTD
 #define DDR_IND_BRT		DDRD
 #define PIN_IND_BRT		PIND
+#define pin_IND_BRT		7
+//-----------------------------------------------------------
+#else
+//-----------------------------------------------------------
+// Версия распиновки от Tapman
+//-----------------------------------------------------------
+/*Педали*/
+#define PIN_PEDAL1	PINB	/* пин педали предварительного сжатия */
+#define PIN_PEDAL2	PINB	/* пин педали */
+#define DDR_PEDAL1	DDRB	/* direct порт педали предварительного сжатия */
+#define DDR_PEDAL2	DDRB	/* direct порт педали */
+#define PORT_PEDAL1	PORTB	/* порт педали для установки подтягивающих резисторов */
+#define PORT_PEDAL2	PORTB
+#define pin_PEDAL1	1
+#define pin_PEDAL2	2
+
+/* buttons*/
+#define DDR_BUTTON_UP		DDRD
+#define DDR_BUTTON_LEFT		DDRD
+#define DDR_BUTTON_RIGHT	DDRD
+#define DDR_BUTTON_DOWN		DDRD
+#define PIN_BUTTON_UP		PIND
+#define PIN_BUTTON_LEFT		PIND
+#define PIN_BUTTON_RIGHT	PIND
+#define PIN_BUTTON_DOWN		PIND
+#define PORT_BUTTON_UP		PORTD
+#define PORT_BUTTON_LEFT	PORTD
+#define PORT_BUTTON_RIGHT	PORTD
+#define PORT_BUTTON_DOWN	PORTD
+#define pin_UP				7
+#define pin_LEFT			6
+#define pin_RIGHT			5
+#define pin_DOWN			4
+
+#define DDR_BUTTON_CURRENT	DDRB
+#define PIN_BUTTON_CURRENT	PINB
+#define PORT_BUTTON_CURRENT	PORTB
+#define pin_BUTTON_CURRENT	6
+
+/* порт трансформатора */
+#define DDR_TRANS	DDRB
+#define PORT_TRANS	PORTB
+#define PIN_TRANS	PINB
+#define pin_TRANS	0
+
+/*Клапаны*/
+#define DDR_VALVE1	DDRB	/* direct порт клапана предварительного сжатия */
+#define DDR_VALVE2	DDRB	/* direct порт клапана */
+#define PORT_VALVE1	PORTB	/* порт клапана предварительного сжатия */
+#define PORT_VALVE2	PORTB	/* порт клапана */
+#define PIN_VALVE1	PINB
+#define PIN_VALVE2	PINB
+#define pin_VALVE1	3
+#define pin_VALVE2	4
+
+/*Светодиоды*/
+#define DDR_LED			DDRC
+#define PORT_LED		PORTC
+#define PIN_LED			PINC
+#define pin_PRE_PRESSING_HL	1
+#define pin_PRESSING_HL		2
+#define pin_HEATING_HL		3
+#define pin_FORGING_HL		4
+#define pin_PAUSE_HL		5
+#define pin_SIMPLE_HL		7
+#define pin_AUTO_HL			6
+#define pin_CURRENT_HL		0
+
+/* порт входа "Ошибка" */
+#define PORT_ALARM	PORTA
+#define DDR_ALARM	DDRA
+#define PIN_ALARM	PINA
+#define pin_ALARM	0
+
+/* порт регулятора подсветки индикатора */
+#define PORT_IND_BRT	PORTB
+#define DDR_IND_BRT		DDRB
+#define PIN_IND_BRT		PINB
+#define pin_IND_BRT		5
+//-----------------------------------------------------------
+#endif
 
 enum tagParams
 {
