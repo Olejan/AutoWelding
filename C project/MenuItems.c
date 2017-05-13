@@ -53,7 +53,7 @@ __attribute__((section(".eeprom")))u8 ee_brtns = ON;
 const char PROGMEM
 	_Empty[]			= "                ",
 #ifndef _RUSSIAN_VERSION_
-	_ViewInfo1[]		= "Version 17.03.17",
+	_ViewInfo1[]		= "Ver.  14.05.17T ",
 	_InfoAuto[]			= "Auto (Pause    )",
 	_InfoSeam[]			= "Mode is Seam    ",
 	_InfoSimple[]		= "Mode is Simple  ",
@@ -95,15 +95,19 @@ const char PROGMEM
 	_SignalAbscent[]	= "Synchronization ",
 	_Synch[]			= "      is absent!",
 	_On[]				= " On",
-	_Off[]				= "Off"
+	_Off[]				= "Off",
 	_Attention[]		= "ATTENTION       ",
 	_Alarm[]			= "        ALARM!!!",
 	_Checkup[]			= "Check up        ",
-	_Equipnent[]		= "    an equipment"
+	_Equipnent[]		= "    an equipment",
 	_PedalIsPressed[]	= "Pedal is pressed",
 	_ReleaseIt[]		= "  - release it  ";
 #else
-	_ViewInfo1[]		= "Версия 18.04.17R",
+#ifdef MVL
+	_ViewInfo1[]		= "Версия 18.04.17M",
+#else
+	_ViewInfo1[]		= "Версия 13.05.17T",
+#endif
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSeam[]			= "Режим Шовный    ",
 	_InfoSimple[]		= "Режим Одиночный ",

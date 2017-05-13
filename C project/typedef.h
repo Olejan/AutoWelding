@@ -1,8 +1,9 @@
 //#define _DEBUG_
-#define _RUSSIAN_VERSION_
+//#define _RUSSIAN_VERSION_
 #define WDT_ENABLE
 #define LED_COMMON_CATHODE	/* светодиоды подключены с общим катодом */
-#define MVL /*Версия распиновки Моя и В.Метелицы*/
+//#define MVL /*Версия распиновки Моя и В.Метелицы*/
+//#define _CHECK_SI_ /* Проверяем СИ на старте */
 
 #ifdef _RUSSIAN_VERSION_
 //Русские буквы
@@ -99,6 +100,23 @@ enum tagHL
 //-----------------------------------------------------------
 // Версия распиновки Моя и В.Метелицы
 //-----------------------------------------------------------
+/* Индикатор */
+#define LCD_PORT         PORTA        /**< port for the LCD lines   */
+#define LCD_DATA0_PORT   LCD_PORT     /**< port for 4bit data bit 0 */
+#define LCD_DATA1_PORT   LCD_PORT     /**< port for 4bit data bit 1 */
+#define LCD_DATA2_PORT   LCD_PORT     /**< port for 4bit data bit 2 */
+#define LCD_DATA3_PORT   LCD_PORT     /**< port for 4bit data bit 3 */
+#define LCD_DATA0_PIN    4            /**< pin for 4bit data bit 0  */
+#define LCD_DATA1_PIN    5            /**< pin for 4bit data bit 1  */
+#define LCD_DATA2_PIN    6            /**< pin for 4bit data bit 2  */
+#define LCD_DATA3_PIN    7            /**< pin for 4bit data bit 3  */
+#define LCD_RS_PORT      LCD_PORT     /**< port for RS line         */
+#define LCD_RS_PIN       1            /**< pin  for RS line         */
+#define LCD_RW_PORT      LCD_PORT     /**< port for RW line         */
+#define LCD_RW_PIN       2            /**< pin  for RW line         */
+#define LCD_E_PORT       LCD_PORT     /**< port for Enable line     */
+#define LCD_E_PIN        3            /**< pin  for Enable line     */
+
 /*Педали*/
 #define PIN_PEDAL1	PINB	/* пин педали предварительного сжатия */
 #define PIN_PEDAL2	PINB	/* пин педали */
@@ -177,6 +195,23 @@ enum tagHL
 //-----------------------------------------------------------
 // Версия распиновки от Tapman
 //-----------------------------------------------------------
+/* Индикатор */
+#define LCD_PORT         PORTA        /**< port for the LCD lines   */
+#define LCD_DATA0_PORT   LCD_PORT     /**< port for 4bit data bit 0 */
+#define LCD_DATA1_PORT   LCD_PORT     /**< port for 4bit data bit 1 */
+#define LCD_DATA2_PORT   LCD_PORT     /**< port for 4bit data bit 2 */
+#define LCD_DATA3_PORT   LCD_PORT     /**< port for 4bit data bit 3 */
+#define LCD_DATA0_PIN    4            /**< pin for 4bit data bit 0  */
+#define LCD_DATA1_PIN    3            /**< pin for 4bit data bit 1  */
+#define LCD_DATA2_PIN    2            /**< pin for 4bit data bit 2  */
+#define LCD_DATA3_PIN    1            /**< pin for 4bit data bit 3  */
+#define LCD_RS_PORT      LCD_PORT     /**< port for RS line         */
+#define LCD_RS_PIN       7            /**< pin  for RS line         */
+#define LCD_RW_PORT      LCD_PORT     /**< port for RW line         */
+#define LCD_RW_PIN       6            /**< pin  for RW line         */
+#define LCD_E_PORT       LCD_PORT     /**< port for Enable line     */
+#define LCD_E_PIN        5            /**< pin  for Enable line     */
+
 /*Педали*/
 #define PIN_PEDAL1	PINB	/* пин педали предварительного сжатия */
 #define PIN_PEDAL2	PINB	/* пин педали */

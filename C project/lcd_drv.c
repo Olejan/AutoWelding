@@ -33,6 +33,7 @@
 
 const char GetAdaptedChar(char c)
 {
+#ifdef _RUSSIAN_VERSION_
 	//if (c < 'А') return c;
 	if (c == 'А') return 'A';
 	else if (c == 'Б') return _B;
@@ -102,6 +103,9 @@ const char GetAdaptedChar(char c)
 	else if (c == 'я') return _ya;
 	else if (c == '$') return _yo;// $ вместо ё, ибо "ё" вне диапазона
 	return 255;
+#else
+	return c;
+#endif
 }
 
 /* 

@@ -244,6 +244,9 @@ extern const char _SignalAbscent[], _Synch[], _Empty[],
 extern void WriteMessage(const char* str1, const char* str2);
 void CheckSynchroImpulse()
 {
+#ifndef _CHECK_SI_
+	return;
+#endif
 	wdt_start(wdt_1s);
 	u8 _tm, cnt;
 	st:
