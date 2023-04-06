@@ -58,7 +58,7 @@ const char PROGMEM
 	_InfoSeam[]			= "Mode is Seam    ",
 	_InfoSimple[]		= "Mode is Simple  ",
 	_ViewParams1[]		= "S7 Pr:450*30 M:5",
-	_ViewParams2[]		= "I:3 H: 30 Fg:110",
+	_ViewParams2[]		= "I:30 H: 30 F:110",
 	_PrePressing[]		= "PrePressing   0 ",
 	_Pressing[]			= "Pressing        ",
 	_Heating[]			= "Heating         ",
@@ -104,15 +104,15 @@ const char PROGMEM
 	_ReleaseIt[]		= "  - release it  ";
 #else
 #ifdef MVL
-	_ViewInfo1[]		= "Версия 18.04.17M",
+	_ViewInfo1[]		= "Версия 02.03.23M",
 #else
-	_ViewInfo1[]		= "Версия 13.05.17T",
+	_ViewInfo1[]		= "Версия 02.03.23T",
 #endif
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSeam[]			= "Режим Шовный    ",
 	_InfoSimple[]		= "Режим Одиночный ",
 	_ViewParams1[]		= "Ш7 С:150*150 М:9",
-	_ViewParams2[]		= "Т:3 Н:150 Пр:150",
+	_ViewParams2[]		= "Т:30 Н:150 П:150",
 	_PrePressing[]		= "Предсжатие      ",
 	_Pressing[]			= "Сжатие          ",
 	_Heating[]			= "Нагрев          ",

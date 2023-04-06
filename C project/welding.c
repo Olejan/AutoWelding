@@ -205,11 +205,17 @@ u8 doModulation()
 	if (m_nHeating > 0)
 		setScreen(scrHeating); // инициализируем экран сварки
 	//if (m_nModulation == 0) return TRUE;
-	_CurrentPauseTCNT = 4000 * (m_nCurrent + 1);
+	//_CurrentPauseTCNT = 4000 * (m_nCurrent + 1); // 0..9
+	//_CurrentPauseTCNT = 1600 * (m_nCurrent + 1); // 0..24
+	_CurrentPauseTCNT = 400 * (m_nCurrent + 1); // 0..99
 	u8 nMod = m_nModulation << 1;// умножаем на 2, т.к. полупериодов в 2 раза больше
 	u16 step = _CurrentPauseTCNT / (nMod + 1);
 	//float fstep = _CurrentPauseTCNT / (m_nModulation + 1); // расчитываю шаг приращения константы для увеличения тока
 	u8 cnt = /*m_nModulation;/*/ 1;
+	// В данном случае 40000 - это константа для таймера Т1 задающая время 10мс
+	// Для установки тока мы заполняем импульсами промежуток от 0 до 10мс.
+	// Одим импульс равен 100мкс вкл и 300мкс выкл, т.е. в сумме 400мкс.
+	// Значит диапазон тока может быть 10мс / 0.4мс = 25, т.е. [0, 24]
 	_TCNT1 = 25535 + step * cnt; // 0xFFFF - 40000 + step * cnt
 	switchHL(pin_HEATING_HL, ON); // включение светодиода нагрева
 	flags.halfPeriod = 0;
@@ -293,7 +299,7 @@ u8 doHeating()
 	}
 	flags.halfPeriod = 0; // сбросим флаг
 	flags.transswitchoff = 0;
-	if (m_nCurrent < 9)
+	if (m_nCurrent < maxCurrent/*9*/)
 	{
 //		_TCNT1 = times[m_nCurrent];
 //		TCNT1 = _TCNT1;
@@ -309,7 +315,7 @@ u8 doHeating()
 	while(heating--)
 	{
 		//while(!flags.halfPeriod) // ждём прерывание int0
-		if (m_nCurrent < 9)
+		if (m_nCurrent < maxCurrent/*9*/)
 		{
 			while(flags.T1IsUp == 0 && flags.transswitchoff == 0)
 			{
@@ -514,7 +520,7 @@ u8 TaskWelding()
 			break;
 		case 1:
 			wdt_start(wdt_1s);
-			_delay_ms(500);
+			_delay_ms(10/*500*/);
 			wdt_start(wdt_60ms);
 			if (isPedal1Pressed())
 			{
@@ -619,9 +625,17 @@ void UpdateParams()
 	}
 	/*Wr3Dec(m_nPrePressing, 5, lcdstr1); // число предварительного сжатия
 	Wr3Dec(m_nPressing, 9, lcdstr1); // число сжатия*/
-	Wr1Dec(m_nModulation, 15, lcdstr1); // число модуляции
-	Wr1Dec(m_nCurrent, 2, lcdstr2); // число мощности тока
-	Wr3Dec(m_nHeating, 6, lcdstr2); // число нагрева
+	if (m_nModulation < 10)
+	{
+		WrChar(':', 14, lcdstr1);
+		Wr1Dec(m_nModulation, 15, lcdstr1); // число модуляции
+	}
+	else
+	{
+		WrDec(m_nModulation, 14, lcdstr1); // число модуляции
+	}
+	WrDec(m_nCurrent, 2, lcdstr2); // число мощности тока
+	Wr3Dec(m_nHeating, 7, lcdstr2); // число нагрева
 	Wr3Dec(m_nForging, 13, lcdstr2); // число проковки
 }
 
@@ -639,7 +653,7 @@ u8 GetValue(u8 a_nParamId)
 		else
 			addr = (u16)&eeMass + m_nCurPrg * paramNum + a_nParamId; // a_nParamId == addr...
 		return readByteEE(addr);
-	}	
+	}
 	return 0;
 }
 

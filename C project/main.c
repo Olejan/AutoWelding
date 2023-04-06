@@ -2,7 +2,7 @@
  * AutoWelding.c
  *
  * Created: 15.09.2013 11:12:04
- *  Author: Punka
+ *  Author: gos
  */ 
 
 #include "IDE.h"
@@ -185,7 +185,7 @@ void initProc()
 	TIMSK = (1<<TOIE0) | (1<<TOIE1); // разрешаю прерывание по переполнению Т0
 	TCNT0 = 0xc1; //(0x82 - 2 ms) (0xc1 - 1ms)
 	TCCR0 = (1<<CS01)|(1<<CS00);    // включаю Т0 с прескаллером 64
-	// T1
+	// T1 - 0xFE70 = 100 мкс
 	TCNT1H = 0xFE;
 	TCNT1L = 0x70;
 	//TCCR1B = 1;//<<CS10;

@@ -1,9 +1,12 @@
+// !!! Проект собирается в AtmelStudio 7.
+// Выбирается нужная конфигурация Release или Debug и жмётся Build
+
 //#define _DEBUG_
-//#define _RUSSIAN_VERSION_
+#define _RUSSIAN_VERSION_
 #define WDT_ENABLE
 #define LED_COMMON_CATHODE	/* светодиоды подключены с общим катодом */
 //#define MVL /*Версия распиновки Моя и В.Метелицы*/
-//#define _CHECK_SI_ /* Проверяем СИ на старте */
+#define _CHECK_SI_ /* Проверяем СИ на старте */
 
 #ifdef _RUSSIAN_VERSION_
 //Русские буквы
@@ -314,16 +317,16 @@ enum tagParams
 
 	maxPrePressing	= 250,
 	maxPressing		= 250,
-	maxModulation	= 9,
-	maxCurrent		= 9,
+	maxModulation	= 99,//24,//9,
+	maxCurrent		= 99,//24,//9,
 	maxHeating		= 250,
 	maxForging		= 250,
 	MAX_PAUSE		= 250,
 
 	defPrePressing	= 100,
 	defPressing		= 20,
-	defModulation	= 9,
-	defCurrent		= 5,
+	defModulation	= 99,//24,//9,
+	defCurrent		= 50,//12,//5,
 	defHeating		= 30,
 	defForging		= 10,
 	DEF_PAUSE		= 25,
