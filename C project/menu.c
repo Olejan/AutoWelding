@@ -86,6 +86,9 @@ void UpdateLcdParam(u8 a_ParamsId, u8 a_nVal)
 {
 	switch(a_ParamsId)
 	{
+		case cmnprmModbusId:
+			Wr3Dec(a_nVal, 13, lcdstr2);
+			break;
 		case paramPrePressing:
 		case paramPressing:
 		case paramHeating:
@@ -269,6 +272,9 @@ void SetMenuData(u8 a_id)
 		case idChooseBrightness:	case idEditBrightness:
 			param = cmnprmBrtns;
 			break;
+		case idChooseModbusId:		case idEditModbusId:
+			param = cmnprmModbusId;
+			break;
 	}
 	switch(a_id)
 	{
@@ -285,6 +291,9 @@ void SetMenuData(u8 a_id)
 		case idChooseBrightness:	case idEditBrightness:
 			if (param != 0xff)
 				UpdateLcdParam(param, GetValue(param));
+			break;
+		case idChooseModbusId:		case idEditModbusId:
+			UpdateLcdParam(param, GetValue(param));
 			break;
 	}
 }

@@ -5,8 +5,9 @@
 #define _RUSSIAN_VERSION_
 #define WDT_ENABLE
 #define LED_COMMON_CATHODE	/* светодиоды подключены с общим катодом */
-//#define MVL /*Версия распиновки Моя и В.Метелицы*/
+#define MVL /*Версия распиновки Моя и В.Метелицы*/
 #define _CHECK_SI_ /* Проверяем СИ на старте */
+#define USE_MODBUS // Используем Modbus
 
 #ifdef _RUSSIAN_VERSION_
 //Русские буквы
@@ -305,7 +306,8 @@ enum tagParams
 	cmnprmStartPrg,			// стартовая программа
 	cmnprmPedalNum,			// количество педалей
 	cmnprmBrtns,			// подсветка
-	extremeParam = cmnprmBrtns,	// крайний параметр
+	cmnprmModbusId,			// Modbus Id
+	extremeParam = cmnprmModbusId,	// крайний параметр
 
 	minPrePressing	= 0,
 	minPressing		= 0,
@@ -425,6 +427,8 @@ enum tagIds
 	idEditPedalNum,
 	idChooseBrightness,
 	idEditBrightness,
+	idChooseModbusId,
+	idEditModbusId,
 };
 
 enum tagMode

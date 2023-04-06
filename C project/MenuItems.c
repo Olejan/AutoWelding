@@ -16,6 +16,7 @@ void fParamCurrent();
 void fCmnPrmStartPrg();
 void fCmnPrmPedalNum();
 void fCmnPrmBrtns();
+void fCmnPrmModbusId();
 void fEditPrePressing();
 void fEditPressing();
 void fEditHeating();
@@ -25,6 +26,7 @@ void fEditCurrent();
 void fEditStartPrg();
 void fEditPedalNum();
 void fEditBrtns();
+void fEditModbusId();
 void fEditMode();
 void fEditPause();
 BOOL CheckUpEditTime(u32 time);
@@ -49,9 +51,13 @@ u8 eeMass[programNumber][paramNum] =
 __attribute__((section(".eeprom")))u8 ee_startprg = 2;
 __attribute__((section(".eeprom")))u8 ee_pedalnum = 2;
 __attribute__((section(".eeprom")))u8 ee_brtns = ON;
+__attribute__((section(".eeprom")))u8 ee_modbus_id = 255;
 //=========================== строки меню ===========================
 const char PROGMEM
 	_Empty[]			= "                ",
+#ifdef USE_MODBUS
+	_ModbusId[]			= "Modbus ID    255",
+#endif //USE_MODBUS
 #ifndef _RUSSIAN_VERSION_
 	_ViewInfo1[]		= "Ver.  14.05.17T ",
 	_InfoAuto[]			= "Auto (Pause    )",
@@ -170,6 +176,9 @@ const MenuItem
 	mCmnPrmStartPrg		PROGMEM = { idChooseStartPrg,	_CommonStngs,	_StartPrg,		fCmnPrmStartPrg },
 	mCmnPrmPedalNum		PROGMEM = { idChoosePedalNum,	_CommonStngs,	_PedalNum,		fCmnPrmPedalNum },
 	mCmnPrmBrtns		PROGMEM = { idChooseBrightness,	_CommonStngs,	_Brightness,	fCmnPrmBrtns	},
+#ifdef USE_MODBUS
+	mCmnPrmModbusId		PROGMEM = { idChooseModbusId,	_CommonStngs,	_ModbusId,		fCmnPrmModbusId },
+#endif //USE_MODBUS
 	mParamMode			PROGMEM = { idChooseMode,		_ChooseParam,	_Mode,			fParamMode },
 	mParamPrePressing	PROGMEM = { idChoosePrePressing,_ChooseParam,	_PrePressing,	fParamPrePressing },
 	mParamPressing		PROGMEM = { idChoosePressing,	_ChooseParam,	_Pressing,		fParamPressing },
@@ -181,6 +190,9 @@ const MenuItem
 	mEditStartPrg		PROGMEM = { idEditStartPrg,		_Editing, 		_StartPrg,		fEditStartPrg },
 	mEditPedalNum		PROGMEM = { idEditPedalNum,		_Editing, 		_PedalNum,		fEditPedalNum },
 	mEditBrtns			PROGMEM = {	idEditBrightness,	_Editing,		_Brightness,	fEditBrtns },
+#ifdef USE_MODBUS
+	mEditModbusId		PROGMEM = { idEditModbusId,		_Editing,		_ModbusId,		fEditModbusId },
+#endif //USE_MODBUS
 	mEditMode			PROGMEM = { idEditMode,			_Editing,		_Mode,			fEditMode },
 	mEditPrePressing	PROGMEM = { idEditPrePressing,	_Editing,		_PrePressing,	fEditPrePressing },
 	mEditPressing		PROGMEM = { idEditPressing,		_Editing,		_Pressing,		fEditPressing },
@@ -203,7 +215,7 @@ extern CURMODE curMode;
 extern u8 _nTaskAlarm;
 extern void UpdateLcdParam(u8 a_ParamsId, u8 a_nVal);
 extern u8 GetValue(u8 a_nParamId);
-extern void SetValue(u8 a_nParamId, u8 a_nVal);
+extern BOOL SetValue(u8 a_nParamId, u8 a_nVal);
 extern void SavedDlg(u8 a_bSaved);
 extern void SetMenu(const MenuItem* a_curMenu); // установка текущего меню из других файлов
 extern void DoMenu();
@@ -309,7 +321,7 @@ void fCmnPrmStartPrg()
 		switch(get_key())
 		{
 			case keyLeft:
-				SetMenu(&mCmnPrmPedalNum);
+				SetMenu(&mCmnPrmModbusId);
 			break;
 			case keyRight:
 				SetMenu(&mCmnPrmBrtns);
@@ -319,25 +331,6 @@ void fCmnPrmStartPrg()
 			break;
 			case keyDown:
 				SetMenu(&mEditStartPrg);
-			break;
-		}
-}
-void fCmnPrmPedalNum()
-{
-	if (flags.scanKey)
-		switch(get_key())
-		{
-			case keyLeft:
-				SetMenu(&mCmnPrmBrtns);
-			break;
-			case keyRight:
-				SetMenu(&mCmnPrmStartPrg);
-			break;
-			case keyUp:
-				SetMenu(&mChooseCmnStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditPedalNum);
 			break;
 		}
 }
@@ -359,6 +352,46 @@ void fCmnPrmBrtns()
 				SetMenu(&mEditBrtns);
 			break;
 		}
+}
+void fCmnPrmPedalNum()
+{
+	if (flags.scanKey)
+		switch(get_key())
+		{
+			case keyLeft:
+				SetMenu(&mCmnPrmBrtns);
+			break;
+			case keyRight:
+				SetMenu(&mCmnPrmModbusId);
+			break;
+			case keyUp:
+				SetMenu(&mChooseCmnStngs);
+			break;
+			case keyDown:
+				SetMenu(&mEditPedalNum);
+			break;
+		}
+}
+void fCmnPrmModbusId()
+{
+	if (flags.scanKey)
+	{
+		switch (get_key())
+		{
+			case keyLeft:
+				SetMenu(&mCmnPrmPedalNum);
+			break;
+			case keyRight:
+				SetMenu(&mCmnPrmStartPrg);
+			break;
+			case keyUp:
+				SetMenu(&mChooseCmnStngs);
+			break;
+			case keyDown:
+				SetMenu(&mEditModbusId);
+			break;
+		}
+	}
 }
 void fParamMode()
 {
@@ -933,6 +966,43 @@ void fEditBrtns()
 					SetValue(cmnprmBrtns, val);
 					SavedDlg(1);
 					SetMenu(&mCmnPrmBrtns);
+				return;
+			}
+		}
+		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
+		return;
+	}
+}
+void fEditModbusId()
+{
+	wdt_start(wdt_60ms);
+	u8 val = readByteEE((u16)&ee_modbus_id);
+	while(1)
+	{
+		if (flags.scanKey)
+		{
+			wdt_feed();
+			switch(get_key())
+			{
+				case keyLeft:
+					val--;
+					if (val == 0)
+						val--;
+					UpdateLcdParam(cmnprmModbusId, val);
+				break;
+				case keyRight:
+					val++;
+					if (val == 0)
+						val++;
+					UpdateLcdParam(cmnprmModbusId, val);
+				break;
+				case keyUp:
+					SavedDlg(0);
+					SetMenu(&mCmnPrmModbusId);
+				return;
+				case keyDown:
+					SavedDlg(SetValue(cmnprmModbusId, val));
+					SetMenu(&mCmnPrmModbusId);
 				return;
 			}
 		}

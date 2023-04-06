@@ -30,6 +30,7 @@ extern u8 eeMass[programNumber][paramNum];
 extern __attribute__((section(".eeprom")))u8 ee_startprg;
 extern __attribute__((section(".eeprom")))u8 ee_pedalnum;
 extern __attribute__((section(".eeprom")))u8 ee_brtns;
+extern __attribute__((section(".eeprom")))u8 ee_modbus_id;
 //=================================================================
 // Data
 //=================================================================
@@ -45,6 +46,7 @@ static u8 m_nPause = MAX_PAUSE;
 static u8 m_nCurPrg = 0; // текущая программа
 static u8 m_nPedalNum = 2; // количество педалей
 static u8 m_nBrtns = ON;
+static u8 m_nModbusId = 255; // Modbus Id
 
 static u8 m_TaskWelding_State = 0; // состояние задачи сварки		
 //===================================================================
@@ -639,97 +641,106 @@ void UpdateParams()
 	Wr3Dec(m_nForging, 13, lcdstr2); // число проковки
 }
 
-u8 GetValue(u8 a_nParamId)
+u8 GetValue(i8 a_nParamId)
 {
-	if (a_nParamId >= paramPrePressing && a_nParamId <= extremeParam)
-	{
-		u16 addr = 0;
-		if (a_nParamId == cmnprmStartPrg)
-			addr = (u16)&ee_startprg;
-		else if (a_nParamId == cmnprmPedalNum)
-			addr = (u16)&ee_pedalnum;
-		else if (a_nParamId == cmnprmBrtns)
-			addr = (u16)&ee_brtns;
-		else
-			addr = (u16)&eeMass + m_nCurPrg * paramNum + a_nParamId; // a_nParamId == addr...
-		return readByteEE(addr);
-	}
-	return 0;
+	if (a_nParamId < paramPrePressing || a_nParamId > extremeParam)
+		return 0;
+	u16 addr = 0;
+	if (a_nParamId == cmnprmStartPrg)
+		addr = (u16)&ee_startprg;
+	else if (a_nParamId == cmnprmPedalNum)
+		addr = (u16)&ee_pedalnum;
+	else if (a_nParamId == cmnprmBrtns)
+		addr = (u16)&ee_brtns;
+	else if (a_nParamId == cmnprmModbusId)
+		addr = (u16)&ee_modbus_id;
+	else
+		addr = (u16)&eeMass + m_nCurPrg * paramNum + a_nParamId; // a_nParamId == addr...
+	return readByteEE(addr);
 }
 
-void SetValue(u8 a_nParamId, u8 a_nVal)
+BOOL SetValue(i8 a_nParamId, u8 a_nVal)
 {
-	if (a_nParamId >= paramPrePressing && a_nParamId <= extremeParam)
+	if (a_nParamId < paramPrePressing || a_nParamId > extremeParam)
+		return FALSE;
+	u16 addr = 0;
+	if (a_nParamId == cmnprmStartPrg)
+		addr = (u16)&ee_startprg;
+	else if (a_nParamId == cmnprmPedalNum)
+		addr = (u16)&ee_pedalnum;
+	else if (a_nParamId == cmnprmBrtns)
+		addr = (u16)&ee_brtns;
+	else if (a_nParamId == cmnprmModbusId)
+		addr = (u16)&ee_modbus_id;
+	else
+		addr = (u16)&eeMass + m_nCurPrg * paramNum + a_nParamId; // a_nParamId == addr...
+	switch(a_nParamId)
 	{
-		u16 addr = 0;
-		if (a_nParamId == cmnprmStartPrg)
-			addr = (u16)&ee_startprg;
-		else if (a_nParamId == cmnprmPedalNum)
-			addr = (u16)&ee_pedalnum;
-		else if (a_nParamId == cmnprmBrtns)
-			addr = (u16)&ee_brtns;
-		else
-			addr = (u16)&eeMass + m_nCurPrg * paramNum + a_nParamId; // a_nParamId == addr...
-		switch(a_nParamId)
-		{
-			case paramPrePressing:
-				if (a_nVal > maxPrePressing || a_nVal < minPrePressing)
-					return;
-				m_nPrePressing = a_nVal;
-				break;
-			case paramPressing:
-				if (a_nVal > maxPressing || a_nVal < minPressing)
-					return;
-				m_nPressing = a_nVal;
-				break;
-			case paramModulation:
-				if (a_nVal > maxModulation || a_nVal < minModulation)
-					return;
-				m_nModulation = a_nVal;
-				break;
-			case paramCurrent:
-				if (a_nVal > maxCurrent || a_nVal < minCurrent)
-					return;
-				m_nCurrent = a_nVal;
-				break;
-			case paramHeating:
-				if (a_nVal > maxHeating || a_nVal < minHeating)
-					return;
-				m_nHeating = a_nVal;
-				break;
-			case paramForging:
-				if (a_nVal > maxForging || a_nVal < minForging)
-					return;
-				m_nForging = a_nVal;
-				break;
-			case paramMode:
-				if (a_nVal > LAST_MODE)
-					return;
-				m_nMode = a_nVal;
-				switchModeHL(m_nMode);
-				break;
-			case paramPause:
-				if (a_nVal < MIN_PAUSE || a_nVal > MAX_PAUSE)
-					return;
-				m_nPause = a_nVal;
-				break;
-			case cmnprmStartPrg:
-				if (a_nVal > lastPrg || a_nVal < firstPrg)
-					return;
-				break;
-			case cmnprmPedalNum:
-				if (a_nVal > maxPedalNum || a_nVal < minPedalNum)
-					return;
-				m_nPedalNum = a_nVal;
-				break;
-			case cmnprmBrtns:
-				if (a_nVal != ON && a_nVal != OFF)
-					return;
-				m_nBrtns = a_nVal;
-				break;
-		}
-		writeByteEE(addr, a_nVal);
+		case paramPrePressing:
+			if (a_nVal > maxPrePressing || a_nVal < minPrePressing)
+				return FALSE;
+			m_nPrePressing = a_nVal;
+			break;
+		case paramPressing:
+			if (a_nVal > maxPressing || a_nVal < minPressing)
+				return FALSE;
+			m_nPressing = a_nVal;
+			break;
+		case paramModulation:
+			if (a_nVal > maxModulation || a_nVal < minModulation)
+				return FALSE;
+			m_nModulation = a_nVal;
+			break;
+		case paramCurrent:
+			if (a_nVal > maxCurrent || a_nVal < minCurrent)
+				return FALSE;
+			m_nCurrent = a_nVal;
+			break;
+		case paramHeating:
+			if (a_nVal > maxHeating || a_nVal < minHeating)
+				return FALSE;
+			m_nHeating = a_nVal;
+			break;
+		case paramForging:
+			if (a_nVal > maxForging || a_nVal < minForging)
+				return FALSE;
+			m_nForging = a_nVal;
+			break;
+		case paramMode:
+			if (a_nVal > LAST_MODE)
+				return FALSE;
+			m_nMode = a_nVal;
+			switchModeHL(m_nMode);
+			break;
+		case paramPause:
+			if (a_nVal < MIN_PAUSE || a_nVal > MAX_PAUSE)
+				return FALSE;
+			m_nPause = a_nVal;
+			break;
+		case cmnprmStartPrg:
+			if (a_nVal > lastPrg || a_nVal < firstPrg)
+				return FALSE;
+			break;
+		case cmnprmPedalNum:
+			if (a_nVal > maxPedalNum || a_nVal < minPedalNum)
+				return FALSE;
+			m_nPedalNum = a_nVal;
+			break;
+		case cmnprmBrtns:
+			if (a_nVal != ON && a_nVal != OFF)
+				return FALSE;
+			m_nBrtns = a_nVal;
+			break;
+		case cmnprmModbusId:
+			if (a_nVal == 0)
+				return FALSE;
+			m_nModbusId = a_nVal;
+			break;
+		default:
+			return FALSE;
 	}
+	writeByteEE(addr, a_nVal);
+	return TRUE;
 }
 
 void initParams()
