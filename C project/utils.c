@@ -175,6 +175,15 @@ void switchHL(u8 line, u8 state)
 #endif
 }
 
+
+void led_switch(u8 line)
+{
+	if (!(PORT_LED & (1 << line)))
+		PORT_LED |= 1 << line;
+	else
+		PORT_LED &= ~(1 << line);
+}
+
 void SwitchAllLED(u8 a_state)
 {
 	if(a_state == ON)

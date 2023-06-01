@@ -7,6 +7,7 @@
 
 #include "IDE.h"
 #include "lcd_drv.h"
+//#include "usart/usart.h"
 //===================================================================
 // MCU ATmega16A
 // Fclk = 4MHz
@@ -51,7 +52,180 @@ extern void StopTaskWelding();
 extern void initParams();
 extern void switchHL(u8 line, u8 state);
 extern void AlarmTask();
+
+extern void led_switch(u8 line);
+void SendStr(u8 * str, char num);
 //=========================================================================
+
+//char msg[24];
+
+#include "AVR_ModBus.h"
+
+#if 0
+// 8 bytes tx fifo buffer,
+// 16 bytes rx fifo buffer
+// interrupt driven USART
+//typedef Usart<16, 16> usart;
+
+//extern struct GyverFIFO _uart_struct;
+
+ISR(USART_UDRE_vect)
+{
+	//usart::TxHandler();
+	/*if (_uart_struct.available())
+		_uart_struct.write(UDR);*/
+}
+
+ISR(USART_RXC_vect)
+{
+	//usart::RxHandler();
+	/*if (_uart_struct.available())
+		UDR = _uart_struct.read();*/
+}
+#endif// 0
+
+
+
+//============================ uart ================================
+
+unsigned char RcCount, TrCount;  //счетчик принятых/переданных данных
+bool StartRec = false;// false/true начало/прием посылки
+bool bModBus = false;  //флаг обработки посылки
+unsigned char cNumRcByte0; //кол-во принятых байт
+unsigned char cNumTrByte0;  //кол-во передаваемых байт
+unsigned char cmRcBuf0[MAX_LENGHT_REC_BUF]; //буфер принимаемых данных
+unsigned char cmTrBuf0[MAX_LENGHT_TR_BUF]; //буфер передаваемых данных
+unsigned char m_nModbusId = MAX_MODBUS_ID; // Modbus Id
+
+extern u8 m_nPrePressing; // число предварительного сжатия
+extern u8 m_nPressing; // число сжатия
+extern u8 m_nModulation; // число модуляции
+extern u8 m_nCurrent; // число мощности тока
+extern u8 m_nHeating; // число нагрева
+extern u8 m_nForging; // число проковки
+extern u8 m_nMode;
+extern u8 m_nPause;
+extern u8 m_nCurPrg; // текущая программа
+extern u8 m_nPedalNum; // количество педалей
+extern u8 m_nBrtns;
+
+//настройка UART
+void InitModBus(void)
+{
+	UBRRHi = Hi(BAUD_DIVIDER);
+	UBRRLow = Low(BAUD_DIVIDER);
+	/*UCSRA_CLR();
+	UCSRB_SET();
+	UCSRC_SET();*/
+	UCSRA = 0;
+	UCSRB = /*1 << RXEN | 1 << TXEN | */1 << RXCIE | 0 << TXCIE;
+	UCSRC = 1 << URSEL | 1 << UCSZ0 | 1 << UCSZ1; //8bit, None, 1stop.bit
+	//останавливаем таймер0
+//	StopTimer0();
+	//разрешаем прерывание по переполнению таймера0
+//	Timer0InterruptEnable();
+}//end InitModBus()
+
+
+i8 t3_5_1ms_num = 0;
+inline void start_t3_5_watching()
+{
+	flags.t3_5_started = true;
+	t3_5_1ms_num = 0;
+}
+inline void stop_t3_5_watching()
+{
+	flags.t3_5_started = false;
+	t3_5_1ms_num = 0;
+}
+
+
+// Включает uart
+void modbus_on()
+{
+	UCSRB |= 1 << RXEN;
+	UCSRB |= 1 << TXEN;
+	stop_t3_5_watching();
+}
+
+// Выключает uart
+void modbus_off()
+{
+	UCSRB &= ~(1 << RXEN);
+	UCSRB &= ~(1 << TXEN);
+	stop_t3_5_watching();
+}
+
+// Проверяет, активен ли uart
+inline bool is_modbus_active()
+{
+	return UCSRB & (1 << RXEN);
+}
+
+void CheckModBus(void)
+{
+	if (bModBus)
+	{
+		cNumTrByte0 = ModBus(cNumRcByte0); //обработка принятого соообщения ModBus
+		if (cNumTrByte0 != 0)
+		{
+			TrCount = 0;
+			StartTrans();
+		} //end if (cNumTrByte0!=0)
+		bModBus = false;
+	} //end if (bModBus)
+} //end CheckModBus(void)
+//-----------------------------Прерывания-------------------------------
+
+//прерывание по завершению получения данных
+//получение запроса от мастера
+ISR(USART_RXC_vect)
+{
+	char cTempUART;
+
+	cTempUART = UDR;
+	
+	if (UCSRA & (1 << FE)) //FE-ошибка кадра   ***может не работать на других МК****
+	{
+		UDR = 0xFE;
+		return;
+	}
+
+	if (!StartRec)//если это первый байт, то начинаем прием
+	{
+		StartRec = true;
+		RcCount = 0;
+	}
+	if (RcCount < MAX_LENGHT_REC_BUF) //если еще не конец буфера
+	{
+		cmRcBuf0[RcCount++] = cTempUART;
+	}
+	else //буфер переполнен
+	{
+		cmRcBuf0[MAX_LENGHT_REC_BUF - 1] = cTempUART;
+	}
+	start_t3_5_watching();
+} //end ISR(USART_RXC_vect)
+
+
+//прерывание по опустошению регистра данных (UDR)
+//отправка ответа
+ISR(USART_UDRE_vect)
+{
+	if (TrCount < cNumTrByte0)
+	{
+		UDR = cmTrBuf0[TrCount];
+		TrCount++;
+	} //end if
+	else
+	{
+		StopTrans();
+		TrCount = 0;
+	} //end else
+}//end ISR(USART_UDRE_vect)
+
+//==================================================================
+
 
 //u8 cnt = 0;
 BOOL did = FALSE;
@@ -115,6 +289,27 @@ ISR(TIMER0_OVF_vect)
 	{
 		flags.alarm = 1;
 		_nTaskAlarm = 1;
+	}
+	
+	//if (flags.modbus_enabled == 1)
+	if (is_modbus_active())
+	{
+		if (flags.t3_5_started)
+		{
+			if (++t3_5_1ms_num >= 4) // 4ms
+			{
+				flags.t3_5_started = false; // Время 3,5мс истекло
+				t3_5_1ms_num = 0; // сбрасываю счётчик миллисекунд для 3,5мс
+				if (StartRec)
+				{
+					StartRec = false; //посылка принята
+					cNumRcByte0 = RcCount;  //кол-во принятых байт
+					bModBus = true;//
+					//StopTimer0();//остановим таймер
+					stop_t3_5_watching();
+				}
+			}
+		}
 	}
 }
 
@@ -224,6 +419,8 @@ void initProc()
 	DDR_IND_BRT |= 1 << pin_IND_BRT;
 	PORT_IND_BRT |= 1 << pin_IND_BRT;
 	
+	InitModBus();
+
 	asm("sei");
 }
 
@@ -428,6 +625,7 @@ void init()
 	SplashScreen();
 #endif // _DEBUG_
 	SetMenu(&mPrograms);
+	modbus_on();
 }
 
 void RefreshSqreen(u8 a_menu)
@@ -449,13 +647,23 @@ void RefreshSqreen(u8 a_menu)
 	SetMenu(addr);
 }
 
+uint32_t time_to_set_modbus_on = 0;
 int main()
 {
 	init();
+	/*for (int i=0;i<25;i++)
+	{
+		cmTrBuf0[i] = i + 0x30;
+	}
+	TrCount = 0;
+	cNumTrByte0 = 25;
+	StartTrans();*/
+	//usart::Init<115200>();
 	wdt_start(wdt_60ms);
 	while(1)//{}
 	{
 		wdt_feed();
+		
 		DoMenu();
 		u8 menu = getCurMenuId();
 		if (isPedal1Pressed() == TRUE // если нажата педаль
@@ -465,6 +673,10 @@ int main()
 				)
 			)
 		{
+			if (is_modbus_active())
+				modbus_off();
+			else
+				time_to_set_modbus_on = 0;
 			StartTaskWelding();
 			while(isPedal1Pressed())
 			{
@@ -476,6 +688,23 @@ int main()
 			StopTaskWelding();
 			RefreshSqreen(menu);
 		}
+		else
+		{
+			if (!is_modbus_active())
+			{
+				if (!time_to_set_modbus_on)
+					time_to_set_modbus_on = nTimeMs + 1000;
+				else if (nTimeMs >= time_to_set_modbus_on)
+				{
+					time_to_set_modbus_on = 0;
+					modbus_on();
+				}
+			}
+			else
+			{
+				CheckModBus();
+			}
+		}
 		if (flags.alarm == 1)
 		{
 			TaskAlarm();
@@ -483,4 +712,21 @@ int main()
 		}
 	}
 	return 0;
+}
+
+void tst()
+{
+	for(;;)
+	{
+		if (!is_modbus_active())
+		{
+			if (!time_to_set_modbus_on)
+			time_to_set_modbus_on = nTimeMs + 1000;
+			else if (nTimeMs >= time_to_set_modbus_on)
+			{
+				time_to_set_modbus_on = 0;
+				modbus_on();
+			}
+		}
+	}
 }

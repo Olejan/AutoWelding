@@ -4,7 +4,7 @@
 #include <avr/interrupt.h>
 //#include <avr/eeprom.h>
 #include <stdio.h>       // подключение модуля ввода-вывода
-//#include <stdbool.h>
+#include <stdbool.h>
 #include <util/delay.h>	 // библиотека задержек
 
 

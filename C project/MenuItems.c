@@ -51,12 +51,12 @@ u8 eeMass[programNumber][paramNum] =
 __attribute__((section(".eeprom")))u8 ee_startprg = 2;
 __attribute__((section(".eeprom")))u8 ee_pedalnum = 2;
 __attribute__((section(".eeprom")))u8 ee_brtns = ON;
-__attribute__((section(".eeprom")))u8 ee_modbus_id = 255;
+__attribute__((section(".eeprom")))u8 ee_modbus_id = MAX_MODBUS_ID;
 //=========================== строки меню ===========================
 const char PROGMEM
 	_Empty[]			= "                ",
 #ifdef USE_MODBUS
-	_ModbusId[]			= "Modbus ID    255",
+	_ModbusId[]			= "Modbus ID    247",
 #endif //USE_MODBUS
 #ifndef _RUSSIAN_VERSION_
 	_ViewInfo1[]		= "Ver.  14.05.17T ",
@@ -973,10 +973,11 @@ void fEditBrtns()
 		return;
 	}
 }
+extern unsigned char m_nModbusId;
 void fEditModbusId()
 {
 	wdt_start(wdt_60ms);
-	u8 val = readByteEE((u16)&ee_modbus_id);
+	u8 val = m_nModbusId;//readByteEE((u16)&ee_modbus_id);
 	while(1)
 	{
 		if (flags.scanKey)
@@ -985,15 +986,17 @@ void fEditModbusId()
 			switch(get_key())
 			{
 				case keyLeft:
-					val--;
-					if (val == 0)
+					if (val > MIN_MODBUS_ID)
 						val--;
+					else
+						val = MAX_MODBUS_ID;
 					UpdateLcdParam(cmnprmModbusId, val);
 				break;
 				case keyRight:
-					val++;
-					if (val == 0)
+					if (val < MAX_MODBUS_ID)
 						val++;
+					else
+						val = MIN_MODBUS_ID;
 					UpdateLcdParam(cmnprmModbusId, val);
 				break;
 				case keyUp:

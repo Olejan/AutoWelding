@@ -316,6 +316,7 @@ enum tagParams
 	minHeating		= 0,
 	minForging		= 0,
 	MIN_PAUSE		= 0,
+	MIN_MODBUS_ID	= 1,
 
 	maxPrePressing	= 250,
 	maxPressing		= 250,
@@ -324,6 +325,7 @@ enum tagParams
 	maxHeating		= 250,
 	maxForging		= 250,
 	MAX_PAUSE		= 250,
+	MAX_MODBUS_ID	= 247,
 
 	defPrePressing	= 100,
 	defPressing		= 20,
@@ -345,8 +347,10 @@ enum tagEEPROMAddr
 	addrForging, // проковка
 	addrMode, // текущий режим
 	addrPause, // пауза между циклами сварки
+	addrLastParam = addrPause,
 	addrStartPrg	= 1 + paramNum * programNumber,	// номер текущей программы (располагается за всеми программами)
 	addrPedalNum,	// количество педалей
+	addrModbusId,	// modbus id
 };
 
 enum tagLCD
@@ -395,6 +399,8 @@ typedef struct
 	u16 T1IsUp	:1;	// прошло 100мкс
 	u16 useT1forHeating	:1;	// сейчас задача нагрева
 	u16 alarm		:1;	// зарегистрированно состояние аварии
+	u16 modbus_enabled	:1; // Modbus активен
+	u16 t3_5_started	:1;
 }tagFlags;
 
 enum tagIds
@@ -470,3 +476,4 @@ enum tagWDT
 	wdt_1s		= 6,
 	wdt_2s		= 7,
 };
+

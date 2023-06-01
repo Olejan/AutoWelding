@@ -35,18 +35,19 @@ extern __attribute__((section(".eeprom")))u8 ee_modbus_id;
 // Data
 //=================================================================
 
-static u8 m_nPrePressing = 0; // число предварительного сжатия
-static u8 m_nPressing = 0; // число сжатия
-static u8 m_nModulation = 0; // число модуляции
-static u8 m_nCurrent = 0; // число мощности тока
-static u8 m_nHeating = 0; // число нагрева
-static u8 m_nForging = 0; // число проковки
-static u8 m_nMode = AUTO_MODE;
-static u8 m_nPause = MAX_PAUSE;
-static u8 m_nCurPrg = 0; // текущая программа
-static u8 m_nPedalNum = 2; // количество педалей
-static u8 m_nBrtns = ON;
-static u8 m_nModbusId = 255; // Modbus Id
+/*static*/ u8 m_nPrePressing = 0; // число предварительного сжатия
+/*static*/ u8 m_nPressing = 0; // число сжатия
+/*static*/ u8 m_nModulation = 0; // число модуляции
+/*static*/ u8 m_nCurrent = 0; // число мощности тока
+/*static*/ u8 m_nHeating = 0; // число нагрева
+/*static*/ u8 m_nForging = 0; // число проковки
+/*static*/ u8 m_nMode = AUTO_MODE;
+/*static*/ u8 m_nPause = MAX_PAUSE;
+/*static*/ u8 m_nCurPrg = 0; // текущая программа
+/*static*/ u8 m_nPedalNum = 2; // количество педалей
+/*static*/ u8 m_nBrtns = ON;
+//static u8 m_nModbusId = 255; // Modbus Id
+extern unsigned char m_nModbusId;
 
 static u8 m_TaskWelding_State = 0; // состояние задачи сварки		
 //===================================================================
@@ -757,6 +758,7 @@ void initParams()
 	initPrgParams(m_nCurPrg); // обновляю значение параметров программы
 	m_nPedalNum = readByteEE((u16)&ee_pedalnum);
 	m_nBrtns = readByteEE((u16)&ee_brtns);
+	m_nModbusId = readByteEE((u16)&ee_modbus_id);
 }
 
 // инициализация переменных из eeprom
@@ -785,6 +787,28 @@ void initPrgParams(u8 a_nPrg)
 	m_nPause = readByteEE(shift + addrPause); // читаем значение паузы между циклами сварки
 	if (m_nPause < MIN_PAUSE || m_nPause > MAX_PAUSE)
 		m_nPause = MAX_PAUSE;
+}
+
+#include "Registers.h"
+// инициализация переменных из eeprom
+int get_param(int reg)
+{// выполняется 95мкс
+	switch (reg)
+	{
+	case CMN_CUR_PRG:
+		return m_nCurPrg;
+	case CMN_START_PRG:
+		return readByteEE((u16)&ee_startprg);
+	case CMN_LIGTH:
+		return readByteEE((u16)&ee_brtns);
+	case CMN_PEDAL_NUM:
+		return readByteEE((u16)&ee_pedalnum);
+	}
+	u8 prg = reg / 0x10;
+	u8 param = reg % 0x10;
+	if (prg > 9 || param > addrLastParam)
+		return -1;
+	return readByteEE((u16)&eeMass + ((int)prg * paramNum + param));
 }
 
 #if 0
