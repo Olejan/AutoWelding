@@ -1,0 +1,1 @@
+avrdude -c stk500 -P com6 -p m16 -U flash:w:AutoWelding.hex -U eeprom:w:AutoWelding.eep
