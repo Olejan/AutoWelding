@@ -1,9 +1,13 @@
+// !!! Проект собирается в AtmelStudio 7.
+// Выбирается нужная конфигурация Release или Debug и жмётся Build
+
 //#define _DEBUG_
-//#define _DEMO_VERSION_
 #define _RUSSIAN_VERSION_
 #define WDT_ENABLE
 #define LED_COMMON_CATHODE	/* светодиоды подключены с общим катодом */
-#define SWITCH_OFF_TRANS_BY_BACK_FRONT
+#define MVL /*Версия распиновки Моя и В.Метелицы*/
+#define _CHECK_SI_ /* Проверяем СИ на старте */
+#define USE_MODBUS // Используем Modbus
 
 #ifdef _RUSSIAN_VERSION_
 //Русские буквы
@@ -74,17 +78,10 @@ enum tag
 {
 	OFF,
 	ON,
-	pinTrans	= 0, // PORTD.0
-	pinValve1	= 0, // PORTB.0
-	pinValve2	= 1, // PORTB.1
-	pinPedal1	= 6, // PORTB.6
-	pinPedal2	= 7, // PORTB.7
 	firstPrg	= 0, // первая программа
-#ifdef _DEMO_VERSION_
-	lastPrg		= 9,
-#else
-	lastPrg		= 9, // последняя программ
-#endif
+	lastPrg		= 9, // крайняя программ
+	minPedalNum	= 1,
+	maxPedalNum	= 2,
 	programNumber = lastPrg + 1,
 	TIME_FOR_MENU	= 30000, // время (мс), после которого нужно выходить в главное меню
 	TIME_FOR_SAVE	= 30000, // время данное для сохранения редактируемого параметра
@@ -96,14 +93,6 @@ enum tag
 
 enum tagHL
 {
-	pinPrePressingHL	= 7,
-	pinPressingHL		= 6,
-	pinHeatingHL		= 5,
-	pinForgingHL		= 4,
-	pinPauseHL			= 3,
-	pinSimpleHL			= 2,
-	pinAutoHL			= 1,
-	pinCurrentHL		= 0,
 #ifdef LED_COMMON_CATHODE
 	ALL_LEDS_OFF		= 0xff,
 #else
@@ -111,74 +100,257 @@ enum tagHL
 #endif
 };
 
-#define PINPEDAL1	PINB	/* пин педали предварительного сжатия */
-#define PINPEDAL2	PINB	/* пин педали */
-#define DDRPEDAL1	DDRB	/* direct порт педали предварительного сжатия */
-#define DDRPEDAL2	DDRB	/* direct порт педали */
+#ifdef MVL
+//-----------------------------------------------------------
+// Версия распиновки Моя и В.Метелицы
+//-----------------------------------------------------------
+/* Индикатор */
+#define LCD_PORT         PORTA        /**< port for the LCD lines   */
+#define LCD_DATA0_PORT   LCD_PORT     /**< port for 4bit data bit 0 */
+#define LCD_DATA1_PORT   LCD_PORT     /**< port for 4bit data bit 1 */
+#define LCD_DATA2_PORT   LCD_PORT     /**< port for 4bit data bit 2 */
+#define LCD_DATA3_PORT   LCD_PORT     /**< port for 4bit data bit 3 */
+#define LCD_DATA0_PIN    4            /**< pin for 4bit data bit 0  */
+#define LCD_DATA1_PIN    5            /**< pin for 4bit data bit 1  */
+#define LCD_DATA2_PIN    6            /**< pin for 4bit data bit 2  */
+#define LCD_DATA3_PIN    7            /**< pin for 4bit data bit 3  */
+#define LCD_RS_PORT      LCD_PORT     /**< port for RS line         */
+#define LCD_RS_PIN       1            /**< pin  for RS line         */
+#define LCD_RW_PORT      LCD_PORT     /**< port for RW line         */
+#define LCD_RW_PIN       2            /**< pin  for RW line         */
+#define LCD_E_PORT       LCD_PORT     /**< port for Enable line     */
+#define LCD_E_PIN        3            /**< pin  for Enable line     */
 
-#define DDRBUTTONS	DDRB	/* */
-#define PINBUTTONS	PINB
-#define PORTBUTTONS	PORTB
+/*Педали*/
+#define PIN_PEDAL1	PINB	/* пин педали предварительного сжатия */
+#define PIN_PEDAL2	PINB	/* пин педали */
+#define DDR_PEDAL1	DDRB	/* direct порт педали предварительного сжатия */
+#define DDR_PEDAL2	DDRB	/* direct порт педали */
+#define PORT_PEDAL1	PORTB	/* порт педали для установки подтягивающих резисторов */
+#define PORT_PEDAL2	PORTB
+#define pin_PEDAL1	6
+#define pin_PEDAL2	7
 
-#define DDRTRANS	DDRD
-#define PORTTRANS	PORTD	/* порт трансформатора */
-#define DDRVALVE1	DDRB	/* direct порт клапана предварительного сжатия */
-#define DDRVALVE2	DDRB	/* direct порт клапана */
-#define PORTVALVE1	PORTB	/* порт клапана предварительного сжатия*/
-#define PORTVALVE2	PORTB	/* порт клапана */
-#define DDRLED		DDRC
-#define PORTLED		PORTC	/* порт светодиодов */
+/* buttons*/
+#define DDR_BUTTON_UP	DDRB
+#define DDR_BUTTON_LEFT	DDRB
+#define DDR_BUTTON_RIGHT	DDRB
+#define DDR_BUTTON_DOWN	DDRB
+#define PIN_BUTTON_UP	PINB
+#define PIN_BUTTON_LEFT	PINB
+#define PIN_BUTTON_RIGHT	PINB
+#define PIN_BUTTON_DOWN	PINB
+#define PORT_BUTTON_UP	PORTB
+#define PORT_BUTTON_LEFT	PORTB
+#define PORT_BUTTON_RIGHT	PORTB
+#define PORT_BUTTON_DOWN	PORTB
+#define pin_UP		2
+#define pin_LEFT	3
+#define pin_RIGHT	4
+#define pin_DOWN	5
+
+#define DDR_BUTTON_CURRENT	DDRD
+#define PIN_BUTTON_CURRENT	PIND
+#define PORT_BUTTON_CURRENT	PORTD
+#define pin_BUTTON_CURRENT	5
+
+/* порт трансформатора */
+#define DDR_TRANS	DDRD
+#define PORT_TRANS	PORTD
+#define PIN_TRANS	PIND
+#define pin_TRANS	6
+
+/*Клапаны*/
+#define DDR_VALVE1	DDRB	/* direct порт клапана предварительного сжатия */
+#define DDR_VALVE2	DDRB	/* direct порт клапана */
+#define PORT_VALVE1	PORTB	/* порт клапана предварительного сжатия */
+#define PORT_VALVE2	PORTB	/* порт клапана */
+#define PIN_VALVE1	PINB
+#define PIN_VALVE2	PINB
+#define pin_VALVE1	0
+#define pin_VALVE2	1
+
+/*Светодиоды*/
+#define DDR_LED			DDRC
+#define PORT_LED		PORTC
+#define PIN_LED			PINC
+#define pin_PRE_PRESSING_HL	7
+#define pin_PRESSING_HL		6
+#define pin_HEATING_HL		5
+#define pin_FORGING_HL		4
+#define pin_PAUSE_HL		3
+#define pin_SIMPLE_HL		2
+#define pin_AUTO_HL			1
+#define pin_CURRENT_HL		0
+
+/* порт входа "Ошибка" */
+#define PORT_ALARM	PORTD
+#define DDR_ALARM	DDRD
+#define PIN_ALARM	PIND
+#define pin_ALARM	4
+
+/* порт регулятора подсветки индикатора */
+#define PORT_IND_BRT	PORTD
+#define DDR_IND_BRT		DDRD
+#define PIN_IND_BRT		PIND
+#define pin_IND_BRT		7
+//-----------------------------------------------------------
+#else
+//-----------------------------------------------------------
+// Версия распиновки от Tapman
+//-----------------------------------------------------------
+/* Индикатор */
+#define LCD_PORT         PORTA        /**< port for the LCD lines   */
+#define LCD_DATA0_PORT   LCD_PORT     /**< port for 4bit data bit 0 */
+#define LCD_DATA1_PORT   LCD_PORT     /**< port for 4bit data bit 1 */
+#define LCD_DATA2_PORT   LCD_PORT     /**< port for 4bit data bit 2 */
+#define LCD_DATA3_PORT   LCD_PORT     /**< port for 4bit data bit 3 */
+#define LCD_DATA0_PIN    4            /**< pin for 4bit data bit 0  */
+#define LCD_DATA1_PIN    3            /**< pin for 4bit data bit 1  */
+#define LCD_DATA2_PIN    2            /**< pin for 4bit data bit 2  */
+#define LCD_DATA3_PIN    1            /**< pin for 4bit data bit 3  */
+#define LCD_RS_PORT      LCD_PORT     /**< port for RS line         */
+#define LCD_RS_PIN       7            /**< pin  for RS line         */
+#define LCD_RW_PORT      LCD_PORT     /**< port for RW line         */
+#define LCD_RW_PIN       6            /**< pin  for RW line         */
+#define LCD_E_PORT       LCD_PORT     /**< port for Enable line     */
+#define LCD_E_PIN        5            /**< pin  for Enable line     */
+
+/*Педали*/
+#define PIN_PEDAL1	PINB	/* пин педали предварительного сжатия */
+#define PIN_PEDAL2	PINB	/* пин педали */
+#define DDR_PEDAL1	DDRB	/* direct порт педали предварительного сжатия */
+#define DDR_PEDAL2	DDRB	/* direct порт педали */
+#define PORT_PEDAL1	PORTB	/* порт педали для установки подтягивающих резисторов */
+#define PORT_PEDAL2	PORTB
+#define pin_PEDAL1	1
+#define pin_PEDAL2	2
+
+/* buttons*/
+#define DDR_BUTTON_UP		DDRD
+#define DDR_BUTTON_LEFT		DDRD
+#define DDR_BUTTON_RIGHT	DDRD
+#define DDR_BUTTON_DOWN		DDRD
+#define PIN_BUTTON_UP		PIND
+#define PIN_BUTTON_LEFT		PIND
+#define PIN_BUTTON_RIGHT	PIND
+#define PIN_BUTTON_DOWN		PIND
+#define PORT_BUTTON_UP		PORTD
+#define PORT_BUTTON_LEFT	PORTD
+#define PORT_BUTTON_RIGHT	PORTD
+#define PORT_BUTTON_DOWN	PORTD
+#define pin_UP				7
+#define pin_LEFT			6
+#define pin_RIGHT			5
+#define pin_DOWN			4
+
+#define DDR_BUTTON_CURRENT	DDRB
+#define PIN_BUTTON_CURRENT	PINB
+#define PORT_BUTTON_CURRENT	PORTB
+#define pin_BUTTON_CURRENT	6
+
+/* порт трансформатора */
+#define DDR_TRANS	DDRB
+#define PORT_TRANS	PORTB
+#define PIN_TRANS	PINB
+#define pin_TRANS	0
+
+/*Клапаны*/
+#define DDR_VALVE1	DDRB	/* direct порт клапана предварительного сжатия */
+#define DDR_VALVE2	DDRB	/* direct порт клапана */
+#define PORT_VALVE1	PORTB	/* порт клапана предварительного сжатия */
+#define PORT_VALVE2	PORTB	/* порт клапана */
+#define PIN_VALVE1	PINB
+#define PIN_VALVE2	PINB
+#define pin_VALVE1	3
+#define pin_VALVE2	4
+
+/*Светодиоды*/
+#define DDR_LED			DDRC
+#define PORT_LED		PORTC
+#define PIN_LED			PINC
+#define pin_PRE_PRESSING_HL	1
+#define pin_PRESSING_HL		2
+#define pin_HEATING_HL		3
+#define pin_FORGING_HL		4
+#define pin_PAUSE_HL		5
+#define pin_SIMPLE_HL		7
+#define pin_AUTO_HL			6
+#define pin_CURRENT_HL		0
+
+/* порт входа "Ошибка" */
+#define PORT_ALARM	PORTA
+#define DDR_ALARM	DDRA
+#define PIN_ALARM	PINA
+#define pin_ALARM	0
+
+/* порт регулятора подсветки индикатора */
+#define PORT_IND_BRT	PORTB
+#define DDR_IND_BRT		DDRB
+#define PIN_IND_BRT		PINB
+#define pin_IND_BRT		5
+//-----------------------------------------------------------
+#endif
 
 enum tagParams
 {
 	paramPrePressing	= 0,// предварительное сжатие !!! 1-й параметр должен быть равен 0 !!!
 	paramPressing,			// сжатие
-	paramHeating,			// нагрев
-	paramForging,			// проковка
 	paramModulation,		// полупериоды модуляции
 	paramCurrent,			// мощность тока
+	paramHeating,			// нагрев
+	paramForging,			// проковка
 	paramMode,				// режим сварки
 	paramPause,				// пауза между циклами сварки
 	paramNum,				// количество параметров !!! должен стоять сразу после последнего параметра !!!
 	cmnprmStartPrg,			// стартовая программа
+	cmnprmPedalNum,			// количество педалей
+	cmnprmBrtns,			// подсветка
+	cmnprmModbusId,			// Modbus Id
+	extremeParam = cmnprmModbusId,	// крайний параметр
 
 	minPrePressing	= 0,
-	minPressing		= 1,
-	minHeating		= 1,
-	minForging		= 1,
+	minPressing		= 0,
 	minModulation	= 0,
 	minCurrent		= 0,
-	MIN_PAUSE		= 1,
+	minHeating		= 0,
+	minForging		= 0,
+	MIN_PAUSE		= 0,
+	MIN_MODBUS_ID	= 1,
 
 	maxPrePressing	= 250,
-	maxPressing		= 99,
-	maxHeating		= 200,
+	maxPressing		= 250,
+	maxModulation	= 99,//24,//9,
+	maxCurrent		= 99,//24,//9,
+	maxHeating		= 250,
 	maxForging		= 250,
-	maxModulation	= 9,
-	maxCurrent		= 9,
 	MAX_PAUSE		= 250,
+	MAX_MODBUS_ID	= 247,
 
-	defPrePressing	= 30,
-	defPressing		= 3,
-	defHeating		= 50,
-	defForging		= 50,
-	defModulation	= 5,
-	defCurrent		= 5,
-	DEF_PAUSE		= 7,
+	defPrePressing	= 100,
+	defPressing		= 20,
+	defModulation	= 99,//24,//9,
+	defCurrent		= 50,//12,//5,
+	defHeating		= 30,
+	defForging		= 10,
+	DEF_PAUSE		= 25,
 };
 //!!// addr... и param... взаимозависимы, смотри welding.c GetValue()
 enum tagEEPROMAddr
 {
 	addrEmpty		= 0,
-	addrPrePressing	= 1, // предварительное сжатие
+	addrPrePressing	= 0,//1, // предварительное сжатие
 	addrPressing, // сжатие
-	addrHeating, // нагрев
-	addrForging, // проковка
 	addrModulation, // полупериоды модуляции
 	addrCurrent, // мощность тока
+	addrHeating, // нагрев
+	addrForging, // проковка
 	addrMode, // текущий режим
 	addrPause, // пауза между циклами сварки
+	addrLastParam = addrPause,
 	addrStartPrg	= 1 + paramNum * programNumber,	// номер текущей программы (располагается за всеми программами)
+	addrPedalNum,	// количество педалей
+	addrModbusId,	// modbus id
 };
 
 enum tagLCD
@@ -217,14 +389,18 @@ enum tagDimentionLCD
 
 typedef struct
 {
-	u16 time40us	:1;
-	u16 dirty		:1; // данные в массиве LCD изменены
+	//u16 dirty		:1; // данные в массиве LCD изменены
 	u16 halfPeriod	:1; // флаг прихода полупериода сетевого напряжения на int0
 	u16 syncfront	:1; // фронт синхроимпульса: 0 - передний, 1 - задний
 	u16 transswitchoff	:1; // выключить трансформатор
-	u16 heating		:1; // flag_nagrev
+	//u16 heating		:1; // flag_nagrev
 	u16 scanKey		:1; // можно сканировать кнопки
 	u16 currentIsEnable	:1; // выход тока открыт/закрыт (1/0)
+	u16 T1IsUp	:1;	// прошло 100мкс
+	u16 useT1forHeating	:1;	// сейчас задача нагрева
+	u16 alarm		:1;	// зарегистрированно состояние аварии
+	u16 modbus_enabled	:1; // Modbus активен
+	u16 t3_5_started	:1;
 }tagFlags;
 
 enum tagIds
@@ -233,6 +409,8 @@ enum tagIds
 	idPrograms,
 	idChoosePrgStngs,
 	idChooseCmnStngs,
+	idBeginChooseParams,
+	idChooseMode = idBeginChooseParams,
 	idChoosePrePressing,
 	idChoosePressing,
 	idChooseModulation,
@@ -240,7 +418,7 @@ enum tagIds
 	idChooseHeating,
 	idChooseForging,
 	idChoosePause,
-	idChooseMode,
+	idEndChooseParams = idChoosePause,
 	idChooseStartPrg,
 	idEditPrePressing,
 	idEditPressing,
@@ -251,17 +429,26 @@ enum tagIds
 	idEditPause,
 	idEditMode,
 	idEditStartPrg,
+	idChoosePedalNum,
+	idEditPedalNum,
+	idChooseBrightness,
+	idEditBrightness,
+	idChooseModbusId,
+	idEditModbusId,
 };
 
 enum tagMode
 {
-	AUTO_MODE	= 0,
-	SIMPLE_MODE,
-	LAST_MODE = SIMPLE_MODE,
+	FIRST_MODE = 0,
+	SIMPLE_MODE	= FIRST_MODE,
+	AUTO_MODE,
+	SEAM_MODE,
+	LAST_MODE = SEAM_MODE,
 	
 	WELD_IS_RUNNIG,
 	SIMPLE_WELD_HAS_DONE,
 	WELD_HAS_BROKEN,
+	WELD_IS_PAUSED,
 };
 
 typedef struct PROGMEM
@@ -289,3 +476,4 @@ enum tagWDT
 	wdt_1s		= 6,
 	wdt_2s		= 7,
 };
+

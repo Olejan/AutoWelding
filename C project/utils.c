@@ -14,11 +14,7 @@ void wait_x10us(u8 a_i)
 {
 	while(a_i--)
 	{
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 		if (flags.halfPeriod || flags.transswitchoff) // если срочно нужно выключить транс
-#else
-		if (flags.halfPeriod) // если пришло прерывание на int0
-#endif
 			return;
 		_delay_us(8);
 	}
@@ -30,11 +26,7 @@ BOOL wait_100us()
 	while(i--)
 	{
 		_delay_us(7);
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 		if (flags.halfPeriod || flags.transswitchoff) // если срочно нужно выключить транс
-#else
-		if (flags.halfPeriod) // если пришло прерывание на int0
-#endif
 			return TRUE;
 	}
 	asm("nop");
@@ -52,11 +44,7 @@ BOOL wait_300us()
 	while(i--)
 	{
 		_delay_us(8);
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 		if (flags.halfPeriod || flags.transswitchoff) // если срочно нужно выключить транс
-#else
-		if (flags.halfPeriod) // если пришло прерывание на int0
-#endif
 			return TRUE;
 	}
 	asm("nop");
@@ -143,73 +131,121 @@ u8 readByteEE(u16 addr)
 }*/
 
 void switchTrans(u8 a_state)
-{//return;
+{
 	if (flags.currentIsEnable == 0)
 	{
-		PORTTRANS |= 1<<pinTrans; // отключаем трансформатор
+		PORT_TRANS |= 1<<pin_TRANS; // отключаем трансформатор
 		return; // и выходим
 	}		
 	if (a_state == ON)
-		PORTTRANS &= ~(1<<pinTrans); // включаем трансформатор
+		PORT_TRANS &= ~(1<<pin_TRANS); // включаем трансформатор
 	else
-		PORTTRANS |= 1<<pinTrans; // отключаем трансформатор
+		PORT_TRANS |= 1<<pin_TRANS; // отключаем трансформатор
 }
-
-/*inline BOOL isPedal1Pressed()
-{
-	if (!(PINPEDAL1 & (1<<pinPedal1)))
-		return TRUE; // педаль предварительного сжатия нажата
-	return FALSE; // педаль предварительного сжатия отжата
-}
-inline BOOL isPedal2Pressed()
-{
-	if (!(PINPEDAL2 & (1<<pinPedal2)))
-		return TRUE; // педаль нажата
-	return FALSE; // педаль отжата
-}*/
 
 void switchValve1(u8 state)
 {
 	if (state == ON)
-		PORTVALVE1 &= ~(1<<pinValve1);
+		PORT_VALVE1 &= ~(1<<pin_VALVE1);
 	else
-		PORTVALVE1 |= 1<<pinValve1;
-	switchHL(pinPrePressingHL, state);
+		PORT_VALVE1 |= 1<<pin_VALVE1;
+	switchHL(pin_PRE_PRESSING_HL, state);
 }
 void switchValve2(u8 state)
 {
 	if (state == ON)
-		PORTVALVE2 &= ~(1<<pinValve2);
+		PORT_VALVE2 &= ~(1<<pin_VALVE2);
 	else
-		PORTVALVE2 |= 1<<pinValve2;
-	switchHL(pinPressingHL, state);
+		PORT_VALVE2 |= 1<<pin_VALVE2;
+	switchHL(pin_PRESSING_HL, state);
 }
 
 void switchHL(u8 line, u8 state)
 {
 #ifdef LED_COMMON_CATHODE
 	if (state == ON)
-		PORTLED &= ~(1 << line);
+		PORT_LED &= ~(1 << line);
 	else
-		PORTLED |= 1 << line;
+		PORT_LED |= 1 << line;
 #else
 	if (state == ON)
-		PORTLED |= 1 << line;
+		PORT_LED |= 1 << line;
 	else
-		PORTLED &= ~(1 << line);
+		PORT_LED &= ~(1 << line);
 #endif
+}
+
+
+void led_switch(u8 line)
+{
+	if (!(PORT_LED & (1 << line)))
+		PORT_LED |= 1 << line;
+	else
+		PORT_LED &= ~(1 << line);
+}
+
+void SwitchAllLED(u8 a_state)
+{
+	if(a_state == ON)
+	{
+		PORT_LED = 0;
+	}
+	else
+	{
+		PORT_LED = 0xff;
+	}
 }
 
 void switchModeHL(u8 a_mode)
 {
 	if (a_mode == SIMPLE_MODE)
 	{
-		switchHL(pinAutoHL, OFF);
-		switchHL(pinSimpleHL, ON);
+		switchHL(pin_AUTO_HL, OFF);
+		switchHL(pin_SIMPLE_HL, ON);
+	}
+	else if (a_mode == AUTO_MODE)
+	{
+		switchHL(pin_SIMPLE_HL, OFF);
+		switchHL(pin_AUTO_HL, ON);
+	}
+	else if (a_mode)
+	{
+		switchHL(pin_SIMPLE_HL, ON);
+		switchHL(pin_AUTO_HL, ON);
+	}
+}
+
+void switchBrightness(u8 a_state)
+{
+	if (a_state == ON)
+	{
+		PORT_IND_BRT |= 1 << pin_IND_BRT;
 	}
 	else
 	{
-		switchHL(pinSimpleHL, OFF);
-		switchHL(pinAutoHL, ON);
+		PORT_IND_BRT &= ~(1 << pin_IND_BRT);
 	}
 }
+/*
+void switchCurrent()
+{
+	if (flags.currentIsEnable == 1)// если ток был разрешён
+	{// запрещаем его
+		flags.currentIsEnable = 0; // запрещаю ток
+		PORT_TRANS |= 1<<pinTrans; // если был включён, выключаю трансформатор
+#ifdef LED_COMMON_CATHODE
+		PORT_LED |= 1 << pinCurrentHL;
+#else
+		PORT_LED &= ~(1 << pinCurrentHL);
+#endif
+	}		
+	else
+	{// разрешаем его
+		flags.currentIsEnable = 1; // разрешаю ток
+#ifdef LED_COMMON_CATHODE
+		PORT_LED &= ~(1 << pinCurrentHL);
+#else
+		PORT_LED |= 1 << pinCurrentHL;
+#endif
+	}
+}*/

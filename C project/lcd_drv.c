@@ -26,12 +26,14 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include "lcd_drv.h"
+//#include "lcd_ru_simbols.h"
 #include "typedef.h"
 
 
 
 const char GetAdaptedChar(char c)
 {
+#ifdef _RUSSIAN_VERSION_
 	//if (c < 'А') return c;
 	if (c == 'А') return 'A';
 	else if (c == 'Б') return _B;
@@ -101,6 +103,9 @@ const char GetAdaptedChar(char c)
 	else if (c == 'я') return _ya;
 	else if (c == '$') return _yo;// $ вместо ё, ибо "ё" вне диапазона
 	return 255;
+#else
+	return c;
+#endif
 }
 
 /* 
@@ -212,12 +217,13 @@ static void lcd_write(uint8_t data,uint8_t rs)
     unsigned char dataBits ;
 
     if (rs)
-	{   /* write data        (RS=1, RW=0) */
-       lcd_rs_high();
-#ifdef _RUSSIAN_VERSION_
-	   if(data >= 'А') data = GetAdaptedChar(data);
-	   else if (data == '$') data = _yo;
-#endif
+    {
+	    #ifdef _RUSSIAN_VERSION_
+	    if(data >= 'А') data = GetAdaptedChar(data);
+	    else if (data == '$') data = _yo;
+	    #endif
+	    /* write data        (RS=1, RW=0) */
+	    lcd_rs_high();
     }
 	else
 	{    /* write instruction (RS=0, RW=0) */

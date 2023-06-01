@@ -1,5 +1,8 @@
 #include "IDE.h"
 
+//=================================================================
+// Extern section
+//=================================================================
 extern void writeByteEE(u16 addr, u8 data);
 extern u8 readByteEE(u16 addr);
 extern BOOL wait_100us();
@@ -21,24 +24,32 @@ extern void switchModeHL(u8 a_mode);
 
 extern volatile tagFlags flags;
 extern volatile u32 waitTime;
+extern volatile u16 _TCNT1;
 
+extern u8 eeMass[programNumber][paramNum];
+extern __attribute__((section(".eeprom")))u8 ee_startprg;
+extern __attribute__((section(".eeprom")))u8 ee_pedalnum;
+extern __attribute__((section(".eeprom")))u8 ee_brtns;
+extern __attribute__((section(".eeprom")))u8 ee_modbus_id;
+//=================================================================
+// Data
+//=================================================================
 
-static u8 m_nPrePressing = 0; // число предварительного сжатия
-static u8 m_nPressing = 0; // число сжатия
-static u8 m_nHeating = 0; // число нагрева
-static u8 m_nForging = 0; // число проковки
-static u8 m_nModulation = 0; // число модуляции
-static u8 m_nCurrent = 0; // число мощности тока
-static u8 m_cntModPeriod = 0; // счётчик периодов модуляции
-static u16 m_nModDelay = 0; // задержка модуляции
-static u8 m_nCurPrg = 0; // текущая программа
-static u8 m_nMode = AUTO_MODE;
-static u8 m_nPause = MAX_PAUSE;
+/*static*/ u8 m_nPrePressing = 0; // число предварительного сжатия
+/*static*/ u8 m_nPressing = 0; // число сжатия
+/*static*/ u8 m_nModulation = 0; // число модуляции
+/*static*/ u8 m_nCurrent = 0; // число мощности тока
+/*static*/ u8 m_nHeating = 0; // число нагрева
+/*static*/ u8 m_nForging = 0; // число проковки
+/*static*/ u8 m_nMode = AUTO_MODE;
+/*static*/ u8 m_nPause = MAX_PAUSE;
+/*static*/ u8 m_nCurPrg = 0; // текущая программа
+/*static*/ u8 m_nPedalNum = 2; // количество педалей
+/*static*/ u8 m_nBrtns = ON;
+//static u8 m_nModbusId = 255; // Modbus Id
+extern unsigned char m_nModbusId;
 
-static u8 m_TaskWelding_State = 0; // состояние задачи сварки
-//static u8 P2cntHigh;	// кол-во зафиксированных состояний педали 2 в высоком уровне
-//static u8 P2cntLow;		// кол-во зафиксированных состояний педали 2 в низком уровне
-//static u8 P2state;		
+static u8 m_TaskWelding_State = 0; // состояние задачи сварки		
 //===================================================================
 // Prototypes
 //==================================================================
@@ -56,12 +67,34 @@ CURMODE curMode = {setMode, getMode}; // методы get и set для обслуживания stati
 
 void setCurMode(u8 a_nPrg)
 {
-	u16 shift = a_nPrg * paramNum;
+	u16 shift = (u16)&eeMass + (int)a_nPrg * paramNum;
 	m_nMode = readByteEE(shift + addrMode); // читаем значение режима сварки
 	if (m_nMode > LAST_MODE)
 		m_nMode = SIMPLE_MODE;
 	switchModeHL(m_nMode);
 }
+//=============================== Pedals ===================================
+// Write here pedals functions
+//==========================================================================
+BOOL isPedal1Pressed()
+{
+	if (m_nPedalNum == 1 || m_nPrePressing == 0)
+		return isPedal2Pressed();
+	if(!(PIN_PEDAL1 & (1<<pin_PEDAL1)))
+		return TRUE; // педаль предварительного сжатия нажата
+	return FALSE; // педаль предварительного сжатия отжата
+}
+BOOL isPedal2Pressed()
+{
+	if(!(PIN_PEDAL2 & (1<<pin_PEDAL2)))
+		return TRUE; // педаль нажата
+	return FALSE; // педаль отжата
+}
+BOOL isImpossibleToWork()
+{// если педали нажаты и нет аварии
+	return (isPedal2Pressed() == FALSE || isPedal1Pressed() == FALSE) || flags.alarm == 1;
+}
+//==========================================================================
 
 //===================================================================
 // предварительное сжатие
@@ -69,7 +102,8 @@ u8 doPrePressing()
 {
 	BOOL bToWrite = FALSE;
 	wdt_start(wdt_60ms);
-	u8 prepressing = m_nPrePressing; // значение времени предварительного сжатия
+	u16 prepressing = (u16)m_nPrePressing << 1; // значение времени предварительного сжатия
+	u8 towrite = m_nPrePressing; // значение для вывода на экран
 	if (prepressing)
 	{
 		if (prepressing > TIME_TO_WRITE)
@@ -84,12 +118,18 @@ u8 doPrePressing()
 	while(1)
 	{
 		if (bToWrite)
-			Wr3Dec(prepressing, 13, lcdstr1); // отправляю значение предварительного сжатия
+		{
+			if (!(prepressing & (1 << 0)))
+			{
+				Wr3Dec(towrite, 13, lcdstr1); // отправляю значение предварительного сжатия
+				towrite--;
+			}
+		}
 		if (prepressing-- == 0)
 			break;
 		while(!flags.halfPeriod) // ждём прихода полупериода
 		{
-			if (isPedal1Pressed() == FALSE)
+			if (isPedal1Pressed() == FALSE  || flags.alarm == 1)
 				return FALSE;
 		}
 		flags.halfPeriod = 0;
@@ -101,22 +141,36 @@ u8 doPrePressing()
 // сжатие
 u8 doPressing()
 {
-	u8 pressing = m_nPressing; // значение времени сжатия
+	BOOL bToWrite = FALSE;
+	u16 pressing = (u16)m_nPressing << 1; // значение времени сжатия
+	u8 towrite = m_nPressing; // значение для вывода на экран
 	wdt_start(wdt_60ms);
 	if (pressing)
 	{
-		setScreen(scrPressing); // инициализируем экран процедуры сжатия
+		if (pressing > TIME_TO_WRITE)
+		{
+			setScreen(scrPressing); // инициализируем экран процедуры сжатия
+			bToWrite = TRUE;
+		}
 		switchValve2(ON); // включаю клапан
 	}
 	else return TRUE;
+	flags.halfPeriod = 0;
 	while(1)
 	{
-		WrDec(pressing, 14, lcdstr1); // отправляю туда значение сжатия
+		if (bToWrite)
+		{
+			if (!(pressing & (1 << 0)))
+			{
+				Wr3Dec(towrite, 13, lcdstr1); // отправляю туда значение сжатия
+				towrite--;
+			}
+		}
 		if (pressing-- == 0)
 			break;
 		while(!flags.halfPeriod)
 		{
-			if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+			if (isImpossibleToWork())
 				return FALSE;
 		}
 		flags.halfPeriod = 0;
@@ -127,15 +181,9 @@ u8 doPressing()
 
 void impulse()
 { // пока не установится флаг - управляем трансформатором
-	//while(!flags.halfPeriod)
-	//PORTTRANS &= ~(1<<pinTrans);
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	while(!flags.transswitchoff)
-#else
-	while(!flags.halfPeriod)
-#endif
 	{
-		if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+		if (isImpossibleToWork())
 			break; // если педали отпустили - значит аварийная остановка
 		switchTrans(ON); // включаем трансформатор
 		if (!wait_100us()) // если прерывания на int0 не было
@@ -147,158 +195,313 @@ void impulse()
 		else
 			break;
 	}
-	//PORTTRANS |= (1<<pinTrans);
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
 	flags.transswitchoff = 0;
-#endif
 	switchTrans(OFF); // отключаем трансформатор
 }
 
-/*
- * За 10 проходов проедуры impuls() в doPreHeating() реально трансформатор включается только в последних 6-ти
- * заходах в процедуру. Если технология процесса сварки позволяет, нужно уменьшить задержку с 330 до 270,
- * тогда в каждом заходе в impuls() будет включаться трансформатор
-*/
-u8 doPreHeating()
+u16 _CurrentPauseTCNT; // константа таймера тока текущей программы
+u8 doModulation()
 {
 	wdt_start(wdt_60ms);
-	setScreen(scrHeating); // инициализируем экран сварки
-	switchHL(pinHeatingHL, ON); // включение светодиода нагрева
-	u8 cntPreHeating = 10;
-	u8 tmpCnt = 0; // временный счётчик
-	flags.halfPeriod = 0; // сбросим флаг прихода полупериода
-	while(1)
+	//u16 heating = m_nHeating << 1;
+	//if (heating > TIME_TO_WRITE)
+	if (m_nHeating > 0)
+		setScreen(scrHeating); // инициализируем экран сварки
+	//if (m_nModulation == 0) return TRUE;
+	//_CurrentPauseTCNT = 4000 * (m_nCurrent + 1); // 0..9
+	//_CurrentPauseTCNT = 1600 * (m_nCurrent + 1); // 0..24
+	_CurrentPauseTCNT = 400 * (m_nCurrent + 1); // 0..99
+	u8 nMod = m_nModulation << 1;// умножаем на 2, т.к. полупериодов в 2 раза больше
+	u16 step = _CurrentPauseTCNT / (nMod + 1);
+	//float fstep = _CurrentPauseTCNT / (m_nModulation + 1); // расчитываю шаг приращения константы для увеличения тока
+	u8 cnt = /*m_nModulation;/*/ 1;
+	// В данном случае 40000 - это константа для таймера Т1 задающая время 10мс
+	// Для установки тока мы заполняем импульсами промежуток от 0 до 10мс.
+	// Одим импульс равен 100мкс вкл и 300мкс выкл, т.е. в сумме 400мкс.
+	// Значит диапазон тока может быть 10мс / 0.4мс = 25, т.е. [0, 24]
+	_TCNT1 = 25535 + step * cnt; // 0xFFFF - 40000 + step * cnt
+	switchHL(pin_HEATING_HL, ON); // включение светодиода нагрева
+	flags.halfPeriod = 0;
+	flags.useT1forHeating = 1;
+	if (m_nModulation == 0)
 	{
-		while(!flags.halfPeriod) // ждём прихода полупериода
+		if (m_nHeating > 0)
+			_TCNT1 = 25535 + _CurrentPauseTCNT;
+		return TRUE;
+	}
+	
+	while(cnt <= nMod)
+	{
+		while(!flags.halfPeriod) // и ждём передний фронт
 		{
-			if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+			if (isImpossibleToWork())
 			{
-				switchHL(pinHeatingHL, OFF);
+				switchHL(pin_HEATING_HL, OFF);
 				return FALSE;
-			}				
+			}
 		}
-		wdt_feed();
 		flags.halfPeriod = 0;
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
+		flags.T1IsUp = 0; // сбросим используемые флаги
 		flags.transswitchoff = 0;
-#endif
-		tmpCnt = cntPreHeating;
-		while(tmpCnt--)
-			_delay_us(270/*330*/);//!!//
-		_delay_ms(7);//!!//
-		
-		impulse();
-		
-		cntPreHeating--;
-		if (!cntPreHeating)
-			break;
+		cnt++;
+		if (cnt > nMod)
+			_TCNT1 = 25535 + _CurrentPauseTCNT;
+		else
+			_TCNT1 = 25535 + step * cnt;
+
+		wdt_feed();
+		while(flags.T1IsUp == 0 && flags.transswitchoff == 0)
+		{
+			if (isImpossibleToWork())
+			{
+				switchHL(pin_HEATING_HL, OFF);
+				TCCR1B = 0;
+				return FALSE;
+			}
+		}
+		if (flags.transswitchoff == 0)
+		{
+			impulse();
+		}
+		else
+		{
+			 // если пересидели в паузе, а уже пришёл задний фронт
+			flags.transswitchoff = 0;
+		}
 	}
 	return TRUE;
 }
 
+/*u16 times[]=
+{
+	0x735F,	// 9ms I = 0
+	0x82FF, // 8ms I = 1
+	0x929F, // 7ms I = 2
+	0xA23F, // 6ms I = 3
+	0xB1DF, // 5ms I = 4
+	0xC17F, // 4ms I = 5
+	0xD11F, // 3ms I = 6
+	0xE0BF, // 2ms I = 7
+	0xF05F, // 1ms I = 8
+	0xFFFF, // 0ms I = 9
+};*/
 u8 doHeating()
 {
+	u8 res = doModulation();
+	if (res == FALSE) return FALSE;
+	if (m_nHeating == 0) return TRUE;
 	wdt_start(wdt_60ms);
-	if (m_nModulation)// если модуляция не 0
-	{ // расчитываю её параметры
-		if ((m_nModulation < 10) && (m_nHeating < m_cntModPeriod))
-			m_cntModPeriod = m_nHeating;
-		else
-			m_cntModPeriod = m_nModulation;
-		if (m_nCurrent)
-			m_nModDelay = 190 * m_nCurrent / m_cntModPeriod;
+	u16 heating = (u16)m_nHeating << 1;// делаю полупериоды из периодов
+	while(!flags.halfPeriod) // ждём прерывание int0
+	{
+		if (isImpossibleToWork())
+		{
+			switchHL(pin_HEATING_HL, OFF);
+			return FALSE;
+		}
 	}
-	u8 heating = m_nHeating;
+	flags.halfPeriod = 0; // сбросим флаг
+	flags.transswitchoff = 0;
+	if (m_nCurrent < maxCurrent/*9*/)
+	{
+//		_TCNT1 = times[m_nCurrent];
+//		TCNT1 = _TCNT1;
+//		TCCR1B = 1;
+//		flags.useT1forHeating = 1;
+		flags.T1IsUp = 0;
+	}
+	else
+	{
+		flags.useT1forHeating = 0;
+		TCCR1B = 0;
+	}
 	while(heating--)
 	{
-		while(!flags.halfPeriod) // ждём прерывание int0
+		//while(!flags.halfPeriod) // ждём прерывание int0
+		if (m_nCurrent < maxCurrent/*9*/)
 		{
-			if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+			while(flags.T1IsUp == 0 && flags.transswitchoff == 0)
 			{
-				switchHL(pinHeatingHL, OFF);
-				return FALSE;
-			}				
-		}
-		wdt_feed();
-		flags.halfPeriod = 0; // сбросим флаг
-#ifdef SWITCH_OFF_TRANS_BY_BACK_FRONT
-		flags.transswitchoff = 0;
-#endif
-		//WrDec(heating, 14, lcdstr1); // и отправляю туда значение сжатия (~160us)
-		u8 cntDelayON = 9 - m_nCurrent;
-		while(cntDelayON--)
-			_delay_us(777);
-		if (m_nCurrent)
-		{
-			if (m_cntModPeriod)
-			{
-				u8 tmp = m_cntModPeriod;
-				while(tmp--)
-					wait_x10us((m_nModDelay / 10) << 2);
-				if (!flags.heating)
-					m_cntModPeriod--;
+				if (isImpossibleToWork())
+				{
+					switchHL(pin_HEATING_HL, OFF);
+					TCCR1B = 0;
+					return FALSE;
+				}
 			}
 		}
-		impulse();
+		wdt_feed();
+		if (flags.transswitchoff == 0)
+		{
+			//flags.halfPeriod = 0; // сбросим флаг
+			//flags.T1IsUp = 0;
+			impulse();
+		}
+		else
+		{
+			 // если пересидели в паузе, а уже пришёл задний фронт
+			flags.transswitchoff = 0;
+		}
+		while(!flags.halfPeriod) // ждём передний фронт после выключения транса по заднему фронту
+		{
+			if (isImpossibleToWork())
+			{
+				switchHL(pin_HEATING_HL, OFF);
+				return FALSE;
+			}
+		}
+		flags.halfPeriod = 0;
+		flags.T1IsUp = 0;
 	}
-	switchHL(pinHeatingHL, OFF);
+	switchHL(pin_HEATING_HL, OFF);
 	return TRUE;
 }
 
 u8 doForging()
 {
+	if (m_nForging == 0) return TRUE;
+	BOOL bToWrite = FALSE;
 	wdt_start(wdt_60ms);
 	setScreen(scrForging);
-	switchHL(pinForgingHL, ON);
-	u8 forging = m_nForging;
+	switchHL(pin_FORGING_HL, ON);
+	u16 forging = m_nForging << 1;
+	u8 towrite = m_nForging;
+	//if (forging > TIME_TO_WRITE)
+		bToWrite = TRUE;
 	while(1)
 	{
-		Wr3Dec(forging, 13, lcdstr1);
+		if (bToWrite)
+		{
+			if (!(forging & (1 << 0)))
+			{
+				Wr3Dec(towrite, 13, lcdstr1); // отправляю туда значение проковки
+				towrite--;
+			}
+		}
 		if (forging-- == 0)
 			break;
 		while(!flags.halfPeriod)
 		{
-			if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+			if (isImpossibleToWork())
 			{
-				switchValve2(OFF);
-				switchHL(pinForgingHL, OFF);
+				switchHL(pin_FORGING_HL, OFF);
 				return FALSE;
 			}
 		}
 		flags.halfPeriod = 0;
 		wdt_feed();
 	}
-	switchValve2(OFF);
-	switchHL(pinForgingHL, OFF);
+	switchHL(pin_FORGING_HL, OFF);
 	return TRUE;
 }
 
-void doPause()
+u8 doPause()
 {
+	if (m_nPause == 0) return TRUE;
+	BOOL bToWrite = FALSE;
 	wdt_start(wdt_60ms);
-	u8 pause = m_nPause;
+	u16 pause = m_nPause << 1;
+	u8 towrite = m_nPause;
+	//if (pause > TIME_TO_WRITE)
+		bToWrite = TRUE;
 	setScreen(scrPause);
-	switchHL(pinPauseHL, ON);
+	switchHL(pin_PAUSE_HL, ON);
 	while(1)
 	{
-		Wr3Dec(pause, 11, lcdstr1);
+		if (bToWrite)
+		{
+			if (!(pause & (1 << 0)))
+			{
+				Wr3Dec(towrite, 11, lcdstr1); // отправляю туда значение паузы
+				towrite--;
+			}
+		}
 		if (pause-- == 0)
 			break;
 		while(!flags.halfPeriod)
 		{
-			if (isPedal2Pressed() == FALSE && isPedal1Pressed() == FALSE)
+			if (isImpossibleToWork())
 			{
-				switchHL(pinPauseHL, OFF);
+				switchHL(pin_PAUSE_HL, OFF);
 				WriteWeldReadiness();
-				return;
+				return FALSE;
 			}
 		}
+		flags.halfPeriod = 0;
 		wdt_feed();
 	}
-	switchHL(pinPauseHL, OFF);
+	switchHL(pin_PAUSE_HL, OFF);
 	if (isPedal2Pressed() == FALSE)
 		WriteWeldReadiness();	// готовность к сварке на экран
+	return TRUE;
 }
+
+u8 GetWeldingState()
+{
+	if (isPedal1Pressed() == FALSE || flags.alarm == 1)
+		return WELD_HAS_BROKEN;
+	if (isPedal2Pressed() == FALSE)
+		return WELD_IS_PAUSED;
+	return WELD_IS_RUNNIG;
+}
+
+u8 DoWelding()
+{
+	if (isPedal2Pressed())
+	{
+		u8 res = doPressing(); // прижим сварных деталей
+		if (res == FALSE)
+			return GetWeldingState();
+		res = doHeating(); // нагрев
+		flags.useT1forHeating = 0;
+		if (res == FALSE)
+			return GetWeldingState();
+		res = doForging(); // проковка сварной точки
+		//switchValve2(OFF);
+		switchHL(pin_FORGING_HL, OFF);
+		if (res == FALSE)
+			return GetWeldingState();
+		if (m_nMode == SIMPLE_MODE)
+		{
+			switchValve2(OFF);
+			setScreen(scrWeldingCompleted);
+			while(1)
+			{
+				if (isPedal2Pressed() == FALSE)
+				{
+					WriteWeldReadiness();	// готовность к сварке на экран
+					_delay_ms(5);	// защита от дребезга контактов. Без этой строки при отпускании педали 2 мог возникнуть повторный цикл сварки
+					return SIMPLE_WELD_HAS_DONE;
+				}
+				if (isPedal1Pressed() == FALSE || flags.alarm == 1)
+					return GetWeldingState();
+				wdt_feed();
+			}
+		}
+		if (m_nPause > 0)
+		{
+			switchValve2(OFF);
+			doPause(); // пауза между циклами сварки
+		}
+	}
+	return WELD_IS_RUNNIG;
+}
+
+u8 DoSeamWelding()
+{
+	if (isPedal2Pressed())
+	{
+		u8 res = doHeating(); // нагрев
+		flags.useT1forHeating = 0;
+		if (res == FALSE)
+			return GetWeldingState();
+		res = doForging(); // проковка сварной точки
+		if (res == FALSE)
+			return GetWeldingState();
+	}
+	return WELD_IS_RUNNIG;
+}
+
 void StartTaskWelding()
 {
 	m_TaskWelding_State = 1;
@@ -308,56 +511,63 @@ void StopTaskWelding()
 	//setScreen(scrWeldingCompleted);
 	m_TaskWelding_State = 0;
 	switchTrans(OFF);
-	switchValve1(OFF);
 	switchValve2(OFF);
+	switchValve1(OFF);
 }
-u8 DoWelding()
+u8 TaskWelding()
 {
+	u8 res;
 	switch(m_TaskWelding_State)
 	{
 		case 0:
 			break;
 		case 1:
 			wdt_start(wdt_1s);
-			_delay_ms(500);
+			_delay_ms(10/*500*/);
 			wdt_start(wdt_60ms);
 			if (isPedal1Pressed())
 			{
 				initPrgParams(m_nCurPrg); 	// читаю из еепром параметры сварки
-				u8 res = doPrePressing();	// предварительный прижим сварных деталей
+				res = doPrePressing();	// предварительный прижим сварных деталей
 				if (res == FALSE)
 					break;
 				WriteWeldReadiness();	// готовность к сварке на экран
-				m_TaskWelding_State++;
+				if (m_nMode == SEAM_MODE)
+					m_TaskWelding_State = 3;
+				else
+					m_TaskWelding_State = 2;
 			}
 			break;
 		case 2:
+			res = DoWelding();
+			if (res != WELD_IS_RUNNIG)
+			{
+				switchValve2(OFF);
+			}
+			if (res == WELD_IS_PAUSED)
+			{
+				WriteWeldReadiness();	// готовность к сварке на экран
+			}
+			break;
+		case 3:
 			if (isPedal2Pressed())
 			{
-				//P2cntLow = 0;
-				u8 res = doPressing(); // прижим сварных деталей
-				if (res == FALSE) return WELD_HAS_BROKEN;
-				res = doPreHeating(); // прогрев
-				if (res == FALSE) return WELD_HAS_BROKEN;
-				res = doHeating(); // нагрев
-				if (res == FALSE) return WELD_HAS_BROKEN;
-				res = doForging(); // проковка сварной точки
-				if (res == FALSE) return WELD_HAS_BROKEN;			
-				if (m_nMode == SIMPLE_MODE)
-				{
-					setScreen(scrWeldingCompleted);
-					while(1)
-					{
-						if (isPedal2Pressed() == FALSE)
-						{
-							WriteWeldReadiness();	// готовность к сварке на экран
-							_delay_ms(5);	// защита от дребезга контактов. Без этой строки при отпускании педали 2 мог возникнуть повторный цикл сварки
-							return SIMPLE_WELD_HAS_DONE;
-						}
-						wdt_feed();
-					}
-				}
-				doPause(); // пауза между циклами сварки
+				res = doPressing();
+				if (res == FALSE)
+					break;
+				m_TaskWelding_State++;
+			}
+			break;
+		case 4:
+			res = DoSeamWelding();
+			if (res != WELD_IS_RUNNIG)
+			{
+				switchValve2(OFF);
+				m_TaskWelding_State--;
+			}
+			if (res == WELD_IS_PAUSED)
+			{
+				WriteWeldReadiness();
 			}
 			break;
 	}
@@ -371,160 +581,242 @@ u8 DoWelding()
 void UpdateParams()
 {
 	initPrgParams(m_nCurPrg);
-	Wr1Dec(m_nCurPrg, 0, lcdstr1); // текущая программа
-	Wr3Dec(m_nHeating, 4, lcdstr1); // число нагрева
-	Wr1Dec(m_nModulation, 10, lcdstr1); // число модуляции
-	Wr1Dec(m_nCurrent, 14, lcdstr1); // число мощности тока
-	Wr3Dec(m_nPrePressing, 3, lcdstr2); // число предварительного сжатия
-	WrDec(m_nPressing, 7, lcdstr2); // число сжатия
+	char ch = ' ';
+#ifdef _RUSSIAN_VERSION_
+	if (m_nMode == SIMPLE_MODE)
+		ch = 'О';
+	else if (m_nMode == AUTO_MODE)
+		ch = 'Ц';
+	else if (m_nMode == SEAM_MODE)
+		ch = 'Ш';
+#else
+	if (m_nMode == SIMPLE_MODE)
+		ch = 'S';
+	else if (m_nMode == AUTO_MODE)
+		ch = 'C';
+	else if (m_nMode == SEAM_MODE)
+		ch = 'E';
+#endif // _RUSSIAN_VERSION_
+	WrChar(ch, 0, lcdstr1); // текущий режим
+	Wr1Dec(m_nCurPrg, 1, lcdstr1); // текущая программа
+	if(m_nPrePressing < 100 || m_nPressing < 100)
+	{
+#ifdef _RUSSIAN_VERSION_
+		WrChar('ж', 4, lcdstr1);
+#else
+		WrChar('r', 4, lcdstr1);
+#endif
+		WrChar(':', 5, lcdstr1);
+		if(m_nPrePressing < 99)
+		{
+			WrDec(m_nPrePressing, 6, lcdstr1);
+			WrChar('*', 8, lcdstr1);
+			Wr3Dec(m_nPressing, 9, lcdstr1);
+		}
+		else
+		{
+			Wr3Dec(m_nPrePressing, 6, lcdstr1);
+			WrChar('*', 9, lcdstr1);
+			WrDec(m_nPressing, 10, lcdstr1);
+		}
+	}
+	else
+	{
+		Wr3Dec(m_nPrePressing, 5, lcdstr1);
+		WrChar('*', 8, lcdstr1);
+		Wr3Dec(m_nPressing, 9, lcdstr1);
+	}
+	/*Wr3Dec(m_nPrePressing, 5, lcdstr1); // число предварительного сжатия
+	Wr3Dec(m_nPressing, 9, lcdstr1); // число сжатия*/
+	if (m_nModulation < 10)
+	{
+		WrChar(':', 14, lcdstr1);
+		Wr1Dec(m_nModulation, 15, lcdstr1); // число модуляции
+	}
+	else
+	{
+		WrDec(m_nModulation, 14, lcdstr1); // число модуляции
+	}
+	WrDec(m_nCurrent, 2, lcdstr2); // число мощности тока
+	Wr3Dec(m_nHeating, 7, lcdstr2); // число нагрева
 	Wr3Dec(m_nForging, 13, lcdstr2); // число проковки
 }
 
-u8 GetValue(u8 a_nParamId)
+u8 GetValue(i8 a_nParamId)
 {
-	if (a_nParamId >= paramPrePressing && a_nParamId <= cmnprmStartPrg)
-	{
-		u16 addr = 0;
-		if (a_nParamId == cmnprmStartPrg)
-			addr = addrStartPrg;
-		else
-			addr = m_nCurPrg * paramNum + a_nParamId + 1; // a_nParamId + 1 == addr...
-		/*switch(a_nParamId)
-		{
-			case paramPrePressing:	addr += addrPrePressing;	break;
-			case paramPressing:		addr += addrPressing;		break;
-			case paramHeating:		addr += addrHeating;		break;
-			case paramForging:		addr += addrForging;		break;
-			case paramModulation:	addr += addrModulation;		break;
-			case paramCurrent:		addr += addrCurrent;		break;
-			case paramMode:			addr += addrMode;			break;
-			case paramPause:		addr += addrPause;			break;
-			case cmnprmStartPrg:	addr = addrStartPrg;		break;
-		}*/
-		return readByteEE(addr);
-	}	
-	return 0;
+	if (a_nParamId < paramPrePressing || a_nParamId > extremeParam)
+		return 0;
+	u16 addr = 0;
+	if (a_nParamId == cmnprmStartPrg)
+		addr = (u16)&ee_startprg;
+	else if (a_nParamId == cmnprmPedalNum)
+		addr = (u16)&ee_pedalnum;
+	else if (a_nParamId == cmnprmBrtns)
+		addr = (u16)&ee_brtns;
+	else if (a_nParamId == cmnprmModbusId)
+		addr = (u16)&ee_modbus_id;
+	else
+		addr = (u16)&eeMass + m_nCurPrg * paramNum + a_nParamId; // a_nParamId == addr...
+	return readByteEE(addr);
 }
 
-void SetValue(u8 a_nParamId, u8 a_nVal)
+BOOL SetValue(i8 a_nParamId, u8 a_nVal)
 {
-	if (a_nParamId >= paramPrePressing && a_nParamId <= cmnprmStartPrg)
+	if (a_nParamId < paramPrePressing || a_nParamId > extremeParam)
+		return FALSE;
+	u16 addr = 0;
+	if (a_nParamId == cmnprmStartPrg)
+		addr = (u16)&ee_startprg;
+	else if (a_nParamId == cmnprmPedalNum)
+		addr = (u16)&ee_pedalnum;
+	else if (a_nParamId == cmnprmBrtns)
+		addr = (u16)&ee_brtns;
+	else if (a_nParamId == cmnprmModbusId)
+		addr = (u16)&ee_modbus_id;
+	else
+		addr = (u16)&eeMass + m_nCurPrg * paramNum + a_nParamId; // a_nParamId == addr...
+	switch(a_nParamId)
 	{
-		u16 addr = 0;
-		if (a_nParamId == cmnprmStartPrg)
-			addr = addrStartPrg;
-		else
-			addr = m_nCurPrg * paramNum + a_nParamId + 1; // a_nParamId + 1 == addr...
-		switch(a_nParamId)
-		{
-			case paramPrePressing:
-				if (a_nVal > maxPrePressing || a_nVal < minPrePressing)
-					return;
-				m_nPrePressing = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrPrePressing, a_nVal);
-				break;
-			case paramPressing:
-				if (a_nVal > maxPressing || a_nVal < minPressing)
-					return;
-				m_nPressing = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrPressing, a_nVal);
-				break;
-			case paramHeating:
-				if (a_nVal > maxHeating || a_nVal < minHeating)
-					return;
-				m_nHeating = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrHeating, a_nVal);
-				break;
-			case paramForging:
-				if (a_nVal > maxForging || a_nVal < minForging)
-					return;
-				m_nForging = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrForging, a_nVal);
-				break;
-			case paramModulation:
-				if (a_nVal > maxModulation || a_nVal < minModulation)
-					return;
-				m_nModulation = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrModulation, a_nVal);
-				break;
-			case paramCurrent:
-				if (a_nVal > maxCurrent || a_nVal < minCurrent)
-					return;
-				m_nCurrent = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrCurrent, a_nVal);
-				break;
-			case paramMode:
-				if (a_nVal > LAST_MODE)
-					return;
-				m_nMode = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrMode, a_nVal);
-				switchModeHL(m_nMode);
-				break;
-			case paramPause:
-				if (a_nVal < MIN_PAUSE || a_nVal > MAX_PAUSE)
-					return;
-				m_nPause = a_nVal;
-				//writeByteEE(m_nCurPrg * paramNum + addrPause, a_nVal);
-				break;
-			case cmnprmStartPrg:
-				if (a_nVal > lastPrg || a_nVal < firstPrg)
-					return;
-				//writeByteEE(addrStartPrg, a_nVal);
-				break;
-		}
-		writeByteEE(addr, a_nVal);
+		case paramPrePressing:
+			if (a_nVal > maxPrePressing || a_nVal < minPrePressing)
+				return FALSE;
+			m_nPrePressing = a_nVal;
+			break;
+		case paramPressing:
+			if (a_nVal > maxPressing || a_nVal < minPressing)
+				return FALSE;
+			m_nPressing = a_nVal;
+			break;
+		case paramModulation:
+			if (a_nVal > maxModulation || a_nVal < minModulation)
+				return FALSE;
+			m_nModulation = a_nVal;
+			break;
+		case paramCurrent:
+			if (a_nVal > maxCurrent || a_nVal < minCurrent)
+				return FALSE;
+			m_nCurrent = a_nVal;
+			break;
+		case paramHeating:
+			if (a_nVal > maxHeating || a_nVal < minHeating)
+				return FALSE;
+			m_nHeating = a_nVal;
+			break;
+		case paramForging:
+			if (a_nVal > maxForging || a_nVal < minForging)
+				return FALSE;
+			m_nForging = a_nVal;
+			break;
+		case paramMode:
+			if (a_nVal > LAST_MODE)
+				return FALSE;
+			m_nMode = a_nVal;
+			switchModeHL(m_nMode);
+			break;
+		case paramPause:
+			if (a_nVal < MIN_PAUSE || a_nVal > MAX_PAUSE)
+				return FALSE;
+			m_nPause = a_nVal;
+			break;
+		case cmnprmStartPrg:
+			if (a_nVal > lastPrg || a_nVal < firstPrg)
+				return FALSE;
+			break;
+		case cmnprmPedalNum:
+			if (a_nVal > maxPedalNum || a_nVal < minPedalNum)
+				return FALSE;
+			m_nPedalNum = a_nVal;
+			break;
+		case cmnprmBrtns:
+			if (a_nVal != ON && a_nVal != OFF)
+				return FALSE;
+			m_nBrtns = a_nVal;
+			break;
+		case cmnprmModbusId:
+			if (a_nVal == 0)
+				return FALSE;
+			m_nModbusId = a_nVal;
+			break;
+		default:
+			return FALSE;
 	}
+	writeByteEE(addr, a_nVal);
+	return TRUE;
 }
 
 void initParams()
 {
 	wdt_start(wdt_250ms);
 	// init common params
-	m_nCurPrg = readByteEE(addrStartPrg);
+	m_nCurPrg = readByteEE((u16)&ee_startprg);
 	if (m_nCurPrg > lastPrg)
 	{
 		m_nCurPrg = firstPrg;
-		writeByteEE(addrStartPrg, firstPrg);
+		writeByteEE((u16)&ee_startprg, firstPrg);
 	}
 	// init local params
 	initPrgParams(m_nCurPrg); // обновляю значение параметров программы
+	m_nPedalNum = readByteEE((u16)&ee_pedalnum);
+	m_nBrtns = readByteEE((u16)&ee_brtns);
+	m_nModbusId = readByteEE((u16)&ee_modbus_id);
 }
 
 // инициализация переменных из eeprom
 void initPrgParams(u8 a_nPrg)
 {// выполняется 95мкс
-	u16 shift = a_nPrg * paramNum;
+	u16 shift = (u16)&eeMass + ((int)a_nPrg * paramNum);
 	m_nPrePressing = readByteEE(shift + addrPrePressing); // число предварительного сжатия
 	if (m_nPrePressing < minPrePressing || m_nPrePressing > maxPrePressing)
 		m_nPrePressing = defPrePressing;
 	m_nPressing = readByteEE(shift + addrPressing); // число сжатия
 	if (m_nPressing < minPressing || m_nPressing > maxPressing)
 		m_nPressing = defPressing;
+	m_nModulation = readByteEE(shift + addrModulation); // читаем число модуляции
+	if (m_nModulation < minModulation || m_nModulation > maxModulation)
+		m_nModulation = defModulation;
+	m_nCurrent = readByteEE(shift + addrCurrent); // читаем число мощности тока
+	if (m_nCurrent < minCurrent || m_nCurrent > maxCurrent)
+		m_nCurrent = defCurrent;
 	m_nHeating = readByteEE(shift + addrHeating); // читаем число нагрева
 	if (m_nHeating < minHeating || m_nHeating > maxHeating)
 		m_nHeating = defHeating;
 	m_nForging = readByteEE(shift + addrForging); // число проковки
 	if (m_nForging < minForging || m_nForging > maxForging)
 		m_nForging = defForging;
-	m_nCurrent = readByteEE(shift + addrCurrent); // читаем число мощности тока
-	if (m_nCurrent < minCurrent || m_nCurrent > maxCurrent)
-		m_nCurrent = defCurrent;
-	m_nModulation = readByteEE(shift + addrModulation); // читаем число модуляции
-	if (m_nModulation < minModulation || m_nModulation > maxModulation)
-		m_nModulation = defModulation;
 	setCurMode(a_nPrg); // читаем значение режима сварки
 	m_nPause = readByteEE(shift + addrPause); // читаем значение паузы между циклами сварки
 	if (m_nPause < MIN_PAUSE || m_nPause > MAX_PAUSE)
 		m_nPause = MAX_PAUSE;
 }
 
-/*void Test()
-{
-	for(;;)
+#include "Registers.h"
+// инициализация переменных из eeprom
+int get_param(int reg)
+{// выполняется 95мкс
+	switch (reg)
 	{
-		initPrgParams(3);
-		switchTrans(ON);
-		initPrgParams(3);
-		switchTrans(OFF);
+	case CMN_CUR_PRG:
+		return m_nCurPrg;
+	case CMN_START_PRG:
+		return readByteEE((u16)&ee_startprg);
+	case CMN_LIGTH:
+		return readByteEE((u16)&ee_brtns);
+	case CMN_PEDAL_NUM:
+		return readByteEE((u16)&ee_pedalnum);
 	}
-}*/
+	u8 prg = reg / 0x10;
+	u8 param = reg % 0x10;
+	if (prg > 9 || param > addrLastParam)
+		return -1;
+	return readByteEE((u16)&eeMass + ((int)prg * paramNum + param));
+}
+
+#if 0
+void Test()
+{
+	for(;;)// делать всегда
+	{
+		doModulation();
+	}
+}
+#endif

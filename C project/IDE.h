@@ -4,10 +4,8 @@
 #include <avr/interrupt.h>
 //#include <avr/eeprom.h>
 #include <stdio.h>       // подключение модуля ввода-вывода
-//#include <stdbool.h>
+#include <stdbool.h>
 #include <util/delay.h>	 // библиотека задержек
-
-#include "InlineFunctions.h"
 
 
 #ifdef WDT_ENABLE
@@ -22,3 +20,9 @@ extern void ResetProc();
 extern void wait_x10us(u8 a_i);
 extern void WriteSyncWarning();
 extern void WriteEmptySqreen();
+extern BOOL isPedal1Pressed();
+extern BOOL isPedal2Pressed();
+extern void SwitchAllLED(u8 a_state);
+extern void switchCurrent();
+extern void switchModeHL(u8 a_mode);
+extern CURMODE curMode;

@@ -3,8 +3,9 @@
 
 extern const u8
 	_Empty[],
-	_InfoAuto[],
 	_InfoSimple[],
+	_InfoAuto[],
+	_InfoSeam[],
 	_ViewParams1[],
 	_ViewParams2[],
 	_PrePressing[],
@@ -25,9 +26,12 @@ extern const u8
 	_HeatingIs[],
 	_ForgingIs[],
 	_Running[],
-	_Auto[],
 	_Simple[],
-	_Pause_[];
+	_Auto[],
+	_Seam[],
+	_Pause_[],
+	_On[],
+	_Off[];
 
 
 	
@@ -49,6 +53,8 @@ extern BOOL is_time_expired(u32 time);
 
 extern CURPRG curPrg;
 extern CURMODE curMode;
+extern u8 eeMass[programNumber][paramNum];
+
 static MenuItem* curMenu = &mPrograms;
 
 
@@ -80,13 +86,16 @@ void UpdateLcdParam(u8 a_ParamsId, u8 a_nVal)
 {
 	switch(a_ParamsId)
 	{
+		case cmnprmModbusId:
+			Wr3Dec(a_nVal, 13, lcdstr2);
+			break;
 		case paramPrePressing:
+		case paramPressing:
 		case paramHeating:
 		case paramForging:
 		case paramPause:
 			Wr3Dec(a_nVal, 12, lcdstr2);
 			break;
-		case paramPressing:
 		case paramModulation:
 		case paramCurrent:
 			WrDec(a_nVal, 12, lcdstr2);
@@ -101,9 +110,23 @@ void UpdateLcdParam(u8 a_ParamsId, u8 a_nVal)
 				lcd_puts_p((const char *)_Simple);
 			else if (a_nVal == AUTO_MODE)
 				lcd_puts_p((const char *)_Auto);
+			else if (a_nVal == SEAM_MODE)
+				lcd_puts_p((const char *)_Seam);
 			break;
 		case cmnprmStartPrg:
+		case cmnprmPedalNum:
 			WrDec(a_nVal, 14, lcdstr2);
+			break;
+		case cmnprmBrtns:
+#ifndef _RUSSIAN_VERSION_
+			lcd_gotoxy(11, lcdstr2);
+#else
+			lcd_gotoxy(12, lcdstr2);
+#endif
+			if (a_nVal == ON)
+				lcd_puts_p((const char *)_On);
+			else
+				lcd_puts_p((const char *)_Off);
 			break;
 	}
 	NoteTime();
@@ -197,14 +220,21 @@ void SetMenuData(u8 a_id)
 	{
 		case idInfo:
 			lcd_gotoxy(0, lcdstr2);
-			if (curMode.get() == AUTO_MODE)
+			u8 mode = curMode.get();
+			if (mode == SIMPLE_MODE)
+			{
+				lcd_puts_p((const char *)_InfoSimple);
+			}
+			else if (mode == AUTO_MODE)
 			{
 				lcd_puts_p((const char *)_InfoAuto);
-				u8 tmp = readByteEE(curPrg.get() * paramNum + addrPause);
+				u8 tmp = readByteEE((u16)&eeMass + curPrg.get() * paramNum + addrPause);
 				Wr3Dec(tmp, 12, lcdstr2);
 			}
-			else
-				lcd_puts_p((const char *)_InfoSimple);
+			else if (mode == SEAM_MODE)
+			{
+				lcd_puts_p((const char *)_InfoSeam);
+			}
 			break;
 		case idPrograms:
 			UpdateParams(); // обновл€ю данные программы на экране
@@ -236,6 +266,15 @@ void SetMenuData(u8 a_id)
 		case idChooseStartPrg:		case idEditStartPrg:
 			param = cmnprmStartPrg;
 			break;
+		case idChoosePedalNum:		case idEditPedalNum:
+			param = cmnprmPedalNum;
+			break;
+		case idChooseBrightness:	case idEditBrightness:
+			param = cmnprmBrtns;
+			break;
+		case idChooseModbusId:		case idEditModbusId:
+			param = cmnprmModbusId;
+			break;
 	}
 	switch(a_id)
 	{
@@ -248,8 +287,13 @@ void SetMenuData(u8 a_id)
 		case idChooseMode:			case idEditMode:
 		case idChoosePause:			case idEditPause:
 		case idChooseStartPrg:		case idEditStartPrg:
+		case idChoosePedalNum:		case idEditPedalNum:
+		case idChooseBrightness:	case idEditBrightness:
 			if (param != 0xff)
 				UpdateLcdParam(param, GetValue(param));
+			break;
+		case idChooseModbusId:		case idEditModbusId:
+			UpdateLcdParam(param, GetValue(param));
 			break;
 	}
 }

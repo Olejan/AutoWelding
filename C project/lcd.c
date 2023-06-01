@@ -15,8 +15,6 @@ extern const char
 	_ChooseParam[],
 	_Splash1[],
 	_Splash2[],
-	_Demo1[],
-	_Demo2[],
 	_Ready[],
 	_ForWelding[],
 	_SignalAbscent[],
@@ -37,7 +35,7 @@ void WrChar(u8 a_char, u8 a_x, u8 a_y)
 	lcd_putc(a_char);
 #endif
 }// WrChar //
-//===============  рисую десимальное число (0..99) ==================
+//===============  рисую десимальное число (0..999) ==================
 void Wr3Dec(u8 a_data, u8 a_x, u8 a_y)
 {
 #ifndef _DEBUG_
@@ -85,7 +83,6 @@ void Wr1Dec(u8 a_data, u8 a_x, u8 a_y)
 #endif
 }
 //===================================================================
-//#ifdef _DEMO_VERSION_
 void SendStr(u8 * str, char num)
 {
 	for(u8 i = 0; i < num; i++)
@@ -139,7 +136,7 @@ void SplashScreen()
 		wdt_feed();
 	}
 }
-//#endif
+
 void WriteMessage(const char* str1, const char* str2)
 {
 	lcd_gotoxy(0, lcdstr1);

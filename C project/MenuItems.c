@@ -14,6 +14,9 @@ void fParamForging();
 void fParamModulation();
 void fParamCurrent();
 void fCmnPrmStartPrg();
+void fCmnPrmPedalNum();
+void fCmnPrmBrtns();
+void fCmnPrmModbusId();
 void fEditPrePressing();
 void fEditPressing();
 void fEditHeating();
@@ -21,6 +24,9 @@ void fEditForging();
 void fEditModulation();
 void fEditCurrent();
 void fEditStartPrg();
+void fEditPedalNum();
+void fEditBrtns();
+void fEditModbusId();
 void fEditMode();
 void fEditPause();
 BOOL CheckUpEditTime(u32 time);
@@ -30,30 +36,35 @@ __attribute__((section(".eeprom")))u8 unused_var = 0;
 __attribute__((section(".eeprom")))
 u8 eeMass[programNumber][paramNum] =
 {
-// {PrePressing,	Pressing,	Heating,	Forging,	Modulation,	Current,	Mode,			Pause}
-	{10,			3,			30,			30,			1,			1,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			2,			2,			SIMPLE_MODE,	DEF_PAUSE},
-	{123,			75,			10,			234,			3,			7,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			4,			4,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			5,			5,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			6,			6,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			7,			7,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			8,			8,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			9,			9,			SIMPLE_MODE,	DEF_PAUSE},
-	{10,			3,			30,			30,			0,			0,			SIMPLE_MODE,	DEF_PAUSE}
+//	{PrePressing,		Pressing,		Modulation,		Current,		Heating,		Forging,		Mode,			Pause}
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
+	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE}
 };
 __attribute__((section(".eeprom")))u8 ee_startprg = 2;
-//__attribute__((section(".eeprom")))u8 ee_mode = SIMPLE_MODE;
-//__attribute__((section(".eeprom")))u8 ee_pause = MAX_PAUSE;
+__attribute__((section(".eeprom")))u8 ee_pedalnum = 2;
+__attribute__((section(".eeprom")))u8 ee_brtns = ON;
+__attribute__((section(".eeprom")))u8 ee_modbus_id = MAX_MODBUS_ID;
 //=========================== строки меню ===========================
 const char PROGMEM
 	_Empty[]			= "                ",
+#ifdef USE_MODBUS
+	_ModbusId[]			= "Modbus ID    247",
+#endif //USE_MODBUS
 #ifndef _RUSSIAN_VERSION_
-	_ViewInfo1[]		= "AutoWelding v0.4",
+	_ViewInfo1[]		= "Ver.  14.05.17T ",
 	_InfoAuto[]			= "Auto (Pause    )",
-	_InfoSimple[]		= " Mode is Simple ",
-	_ViewParams1[]		= "7 H: 30 M:5 I:3 ",
-	_ViewParams2[]		= "Pr:450*30 Fg:110",
+	_InfoSeam[]			= "Mode is Seam    ",
+	_InfoSimple[]		= "Mode is Simple  ",
+	_ViewParams1[]		= "S7 Pr:450*30 M:5",
+	_ViewParams2[]		= "I:30 H: 30 F:110",
 	_PrePressing[]		= "PrePressing   0 ",
 	_Pressing[]			= "Pressing        ",
 	_Heating[]			= "Heating         ",
@@ -73,28 +84,42 @@ const char PROGMEM
 	_WeldingIs[]		= " Welding is     ",
 	_Completed[]		= "     completed! ",
 	_StartPrg[]			= "Start Program 01",
+	_PedalNum[]			= "Pedal number   2",
+	_Brightness[]		= " Brightness   On",
 	_PressingIs[]		= " Pressing is    ",
 	_HeatingIs[]		= " Heating is     ",
 	_ForgingIs[]		= " Forging is     ",
-	_Auto[]				= "  is Auto",
 	_Simple[]			= "is Simple",
+	_Auto[]				= "  is Auto",
+	_Seam[]				= "  is Seam",
 	_Running[]			= "       running! ",
 	_Ready[]			= "Ready! Push     ",
 	_ForWelding[]		= "  pedal for weld",
 	_Pause_[]			= "   Pause        ",
 	_Splash1[]			= " Welcome to the ",
 	_Splash2[]			= "   auto welding!",
-	_Demo1[]			= " Demo version   ",
-	_Demo2[]			= "   Demo version ";
-	_SignalAbscent[]	= "Synchronization ";
-	_Synch[]			= "     is abscent!";
+	_SignalAbscent[]	= "Synchronization ",
+	_Synch[]			= "      is absent!",
+	_On[]				= " On",
+	_Off[]				= "Off",
+	_Attention[]		= "ATTENTION       ",
+	_Alarm[]			= "        ALARM!!!",
+	_Checkup[]			= "Check up        ",
+	_Equipnent[]		= "    an equipment",
+	_PedalIsPressed[]	= "Pedal is pressed",
+	_ReleaseIt[]		= "  - release it  ";
 #else
-	_ViewInfo1[]		= "АвтоСварка v0.4R",
+#ifdef MVL
+	_ViewInfo1[]		= "Версия 02.03.23M",
+#else
+	_ViewInfo1[]		= "Версия 02.03.23T",
+#endif
 	_InfoAuto[]			= "Цикл (Пауза    )",
+	_InfoSeam[]			= "Режим Шовный    ",
 	_InfoSimple[]		= "Режим Одиночный ",
-	_ViewParams1[]		= "7 Н: 30 М:5 Т:3 ",
-	_ViewParams2[]		= "Сж:450*30 Пр:110",
-	_PrePressing[]		= "Предвар.Сж.   0 ",
+	_ViewParams1[]		= "Ш7 С:150*150 М:9",
+	_ViewParams2[]		= "Т:30 Н:150 П:150",
+	_PrePressing[]		= "Предсжатие      ",
 	_Pressing[]			= "Сжатие          ",
 	_Heating[]			= "Нагрев          ",
 	_Modulation[]		= "Модуляция       ",
@@ -113,21 +138,31 @@ const char PROGMEM
 	_WeldingIs[]		= " Цикл сварки    ",
 	_Completed[]		= "     заверш$н!  ",
 	_StartPrg[]			= "Стартовая прг 01",
+	_PedalNum[]			= "Всего педалей  2",
+	_Brightness[]		= "Подсветка       ",
 	_PressingIs[]		= " Сжатие         ",
 	_HeatingIs[]		= " Нагрев         ",
 	_ForgingIs[]		= " Проковка       ",
-	_Auto[]				= "   Цикл  ",
 	_Simple[]			= "Одиночный",
+	_Auto[]				= "   Цикл  ",
+	_Seam[]				= "  Шовный ",
 	_Running[]			= "    в процессе! ",
 	_Ready[]			= "Готово! Нажмите ",
 	_ForWelding[]		= "педальдля сварки",
 	_Pause_[]			= "   Пауза        ",
 	_Splash1[]			= "Да будет ваш    ",
 	_Splash2[]			= "  шов крепким!!!",
-	_Demo1[]			= " Демо версия    ",
-	_Demo2[]			= "   Демо версия  ",
 	_SignalAbscent[]	= "Нет сигнала     ",
-	_Synch[]			= "  синхронизации!";
+	_Synch[]			= "  синхронизации!",
+	_On[]				= " Вкл",
+	_Off[]				= "Выкл",
+	_Attention[]		= "ВНИМАНИЕ        ",
+	_Alarm[]			= "       АВАРИЯ!!!",
+	_Checkup[]			= "Проверьте       ",
+	_Equipnent[]		= "    оборудование",
+	_PedalIsPressed[]	= "Нажата педаль - ",
+	_ReleaseIt[]		= "    отпустите е$";
+
 #endif
 
 
@@ -138,23 +173,33 @@ const MenuItem
 	mPrograms			PROGMEM = { idPrograms,			_ViewParams1,	_ViewParams2,	fPrograms },
 	mChoosePrgStngs		PROGMEM = { idChoosePrgStngs,	_ChooseMenu,	_ProgramStngs,	fChoosePrgStngs },
 	mChooseCmnStngs		PROGMEM = { idChooseCmnStngs,	_ChooseMenu,	_CommonStngs,	fChooseCmnStngs },
-	mParamMode			PROGMEM = { idChooseMode,		_ChooseParam,	_Mode,			fParamMode },
-	mParamPause			PROGMEM = { idChoosePause,		_ChooseParam,	_Pause,			fParamPause },
 	mCmnPrmStartPrg		PROGMEM = { idChooseStartPrg,	_CommonStngs,	_StartPrg,		fCmnPrmStartPrg },
+	mCmnPrmPedalNum		PROGMEM = { idChoosePedalNum,	_CommonStngs,	_PedalNum,		fCmnPrmPedalNum },
+	mCmnPrmBrtns		PROGMEM = { idChooseBrightness,	_CommonStngs,	_Brightness,	fCmnPrmBrtns	},
+#ifdef USE_MODBUS
+	mCmnPrmModbusId		PROGMEM = { idChooseModbusId,	_CommonStngs,	_ModbusId,		fCmnPrmModbusId },
+#endif //USE_MODBUS
+	mParamMode			PROGMEM = { idChooseMode,		_ChooseParam,	_Mode,			fParamMode },
 	mParamPrePressing	PROGMEM = { idChoosePrePressing,_ChooseParam,	_PrePressing,	fParamPrePressing },
 	mParamPressing		PROGMEM = { idChoosePressing,	_ChooseParam,	_Pressing,		fParamPressing },
-	mParamHeating		PROGMEM = { idChooseHeating,	_ChooseParam,	_Heating,		fParamHeating },
-	mParamForging		PROGMEM = { idChooseForging,	_ChooseParam,	_Forging,		fParamForging },
 	mParamModulation	PROGMEM = { idChooseModulation,	_ChooseParam,	_Modulation,	fParamModulation },
 	mParamCurrent		PROGMEM = { idChooseCurrent,	_ChooseParam,	_Current,		fParamCurrent },
+	mParamHeating		PROGMEM = { idChooseHeating,	_ChooseParam,	_Heating,		fParamHeating },
+	mParamForging		PROGMEM = { idChooseForging,	_ChooseParam,	_Forging,		fParamForging },
+	mParamPause			PROGMEM = { idChoosePause,		_ChooseParam,	_Pause,			fParamPause },
+	mEditStartPrg		PROGMEM = { idEditStartPrg,		_Editing, 		_StartPrg,		fEditStartPrg },
+	mEditPedalNum		PROGMEM = { idEditPedalNum,		_Editing, 		_PedalNum,		fEditPedalNum },
+	mEditBrtns			PROGMEM = {	idEditBrightness,	_Editing,		_Brightness,	fEditBrtns },
+#ifdef USE_MODBUS
+	mEditModbusId		PROGMEM = { idEditModbusId,		_Editing,		_ModbusId,		fEditModbusId },
+#endif //USE_MODBUS
+	mEditMode			PROGMEM = { idEditMode,			_Editing,		_Mode,			fEditMode },
 	mEditPrePressing	PROGMEM = { idEditPrePressing,	_Editing,		_PrePressing,	fEditPrePressing },
 	mEditPressing		PROGMEM = { idEditPressing,		_Editing,		_Pressing,		fEditPressing },
-	mEditHeating		PROGMEM = { idEditHeating,		_Editing,		_Heating,		fEditHeating },
-	mEditForging		PROGMEM = { idEditForging,		_Editing,		_Forging,		fEditForging },
 	mEditModulation		PROGMEM = { idEditModulation,	_Editing,		_Modulation,	fEditModulation },
 	mEditCurrent		PROGMEM = { idEditCurrent,		_Editing, 		_Current,		fEditCurrent },
-	mEditStartPrg		PROGMEM = { idEditStartPrg,		_Editing, 		_StartPrg,		fEditStartPrg },
-	mEditMode			PROGMEM = { idEditMode,			_Editing,		_Mode,			fEditMode },
+	mEditHeating		PROGMEM = { idEditHeating,		_Editing,		_Heating,		fEditHeating },
+	mEditForging		PROGMEM = { idEditForging,		_Editing,		_Forging,		fEditForging },
 	mEditPause			PROGMEM = { idEditPause,		_Editing,		_Pause,			fEditPause };
 
 //====================== глобальные переменные ======================
@@ -167,9 +212,10 @@ extern void UpdateParams();
 extern volatile tagFlags flags;
 extern CURPRG curPrg;
 extern CURMODE curMode;
+extern u8 _nTaskAlarm;
 extern void UpdateLcdParam(u8 a_ParamsId, u8 a_nVal);
 extern u8 GetValue(u8 a_nParamId);
-extern void SetValue(u8 a_nParamId, u8 a_nVal);
+extern BOOL SetValue(u8 a_nParamId, u8 a_nVal);
 extern void SavedDlg(u8 a_bSaved);
 extern void SetMenu(const MenuItem* a_curMenu); // установка текущего меню из других файлов
 extern void DoMenu();
@@ -177,6 +223,7 @@ extern u8 readByteEE(u16 addr);
 extern BOOL is_time_expired(u32 time);
 extern void NoteTime();
 extern u8 getCurMenuId();
+extern void switchBrightness(u8 a_state);
 
 void fInfo()
 {
@@ -244,7 +291,7 @@ void fChoosePrgStngs()
 				SetMenu(&mPrograms);
 			break;
 			case keyDown:
-				SetMenu(&mParamPrePressing);
+				SetMenu(&mParamMode);
 			break;
 		}
 	}
@@ -268,6 +315,84 @@ void fChooseCmnStngs()
 		}
 	}
 }
+void fCmnPrmStartPrg()
+{
+	if (flags.scanKey)
+		switch(get_key())
+		{
+			case keyLeft:
+				SetMenu(&mCmnPrmModbusId);
+			break;
+			case keyRight:
+				SetMenu(&mCmnPrmBrtns);
+			break;
+			case keyUp:
+				SetMenu(&mChooseCmnStngs);
+			break;
+			case keyDown:
+				SetMenu(&mEditStartPrg);
+			break;
+		}
+}
+void fCmnPrmBrtns()
+{
+	if (flags.scanKey)
+		switch (get_key())
+		{
+			case keyLeft:
+				SetMenu(&mCmnPrmStartPrg);
+			break;
+			case keyRight:
+				SetMenu(&mCmnPrmPedalNum);
+			break;
+			case keyUp:
+				SetMenu(&mChooseCmnStngs);
+			break;
+			case keyDown:
+				SetMenu(&mEditBrtns);
+			break;
+		}
+}
+void fCmnPrmPedalNum()
+{
+	if (flags.scanKey)
+		switch(get_key())
+		{
+			case keyLeft:
+				SetMenu(&mCmnPrmBrtns);
+			break;
+			case keyRight:
+				SetMenu(&mCmnPrmModbusId);
+			break;
+			case keyUp:
+				SetMenu(&mChooseCmnStngs);
+			break;
+			case keyDown:
+				SetMenu(&mEditPedalNum);
+			break;
+		}
+}
+void fCmnPrmModbusId()
+{
+	if (flags.scanKey)
+	{
+		switch (get_key())
+		{
+			case keyLeft:
+				SetMenu(&mCmnPrmPedalNum);
+			break;
+			case keyRight:
+				SetMenu(&mCmnPrmStartPrg);
+			break;
+			case keyUp:
+				SetMenu(&mChooseCmnStngs);
+			break;
+			case keyDown:
+				SetMenu(&mEditModbusId);
+			break;
+		}
+	}
+}
 void fParamMode()
 {
 	if (flags.scanKey)
@@ -281,10 +406,7 @@ void fParamMode()
 					SetMenu(&mParamForging);
 			break;
 			case keyRight:
-				/*if (curMode.get() == AUTO_MODE)
-					SetMenu(&mParamPause);
-				else*/
-					SetMenu(&mParamPrePressing);
+				SetMenu(&mParamPrePressing);
 			break;
 			case keyUp:
 				SetMenu(&mChoosePrgStngs);
@@ -295,59 +417,13 @@ void fParamMode()
 		}
 	}
 }
-void fParamPause()
-{
-	if (flags.scanKey)
-	{
-		switch(get_key())
-		{
-			case keyLeft:
-				SetMenu(&mParamForging);
-			break;
-			case keyRight:
-				SetMenu(&mParamMode);
-			break;
-			case keyUp:
-				SetMenu(&mChoosePrgStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditPause);
-			break;
-		}
-	}
-}
-void fCmnPrmStartPrg()
-{
-	if (flags.scanKey)
-		switch(get_key())
-		{
-			/*case keyLeft:
-				if (curMode.get() == AUTO_MODE)
-					SetMenu(&mParamPause);
-				else
-					SetMenu(&mParamMode);
-			break;
-			case keyRight:
-				SetMenu(&mParamPrePressing);
-			break;*/
-			case keyUp:
-				SetMenu(&mChooseCmnStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditStartPrg);
-			break;
-		}
-}
 void fParamPrePressing()
 {
 	if (flags.scanKey)
 		switch(get_key())
 		{
 			case keyLeft:
-				/*if (curMode.get() == AUTO_MODE)
-					SetMenu(&mParamPause);
-				else*/
-					SetMenu(&mParamMode);
+				SetMenu(&mParamMode);
 			break;
 			case keyRight:
 				SetMenu(&mParamPressing);
@@ -379,6 +455,44 @@ void fParamPressing()
 			break;
 		}
 }
+void fParamModulation()
+{
+	if (flags.scanKey)
+	switch(get_key())
+	{
+		case keyLeft:
+		SetMenu(&mParamPressing);
+		break;
+		case keyRight:
+		SetMenu(&mParamCurrent);
+		break;
+		case keyUp:
+		SetMenu(&mChoosePrgStngs);
+		break;
+		case keyDown:
+		SetMenu(&mEditModulation);
+		break;
+	}
+}
+void fParamCurrent()
+{
+	if (flags.scanKey)
+	switch(get_key())
+	{
+		case keyLeft:
+		SetMenu(&mParamModulation);
+		break;
+		case keyRight:
+		SetMenu(&mParamHeating);
+		break;
+		case keyUp:
+		SetMenu(&mChoosePrgStngs);
+		break;
+		case keyDown:
+		SetMenu(&mEditCurrent);
+		break;
+	}
+}
 void fParamHeating()
 {
 	if (flags.scanKey)
@@ -408,9 +522,9 @@ void fParamForging()
 			break;
 			case keyRight:
 				if (curMode.get() == AUTO_MODE)
-				SetMenu(&mParamPause);
+					SetMenu(&mParamPause);
 				else
-				SetMenu(&mParamMode);
+					SetMenu(&mParamMode);
 			break;
 			case keyUp:
 				SetMenu(&mChoosePrgStngs);
@@ -420,43 +534,26 @@ void fParamForging()
 			break;
 		}
 }
-void fParamModulation()
+void fParamPause()
 {
 	if (flags.scanKey)
+	{
 		switch(get_key())
 		{
 			case keyLeft:
-				SetMenu(&mParamPressing);
+				SetMenu(&mParamForging);
 			break;
 			case keyRight:
-				SetMenu(&mParamCurrent);
+				SetMenu(&mParamMode);
 			break;
 			case keyUp:
 				SetMenu(&mChoosePrgStngs);
 			break;
 			case keyDown:
-				SetMenu(&mEditModulation);
+				SetMenu(&mEditPause);
 			break;
 		}
-}
-void fParamCurrent()
-{
-	if (flags.scanKey)
-		switch(get_key())
-		{
-			case keyLeft:
-				SetMenu(&mParamModulation);
-			break;
-			case keyRight:
-				SetMenu(&mParamHeating);
-			break;
-			case keyUp:
-				SetMenu(&mChoosePrgStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditCurrent);
-			break;
-		}
+	}
 }
 void fEditPrePressing()
 {
@@ -746,7 +843,7 @@ void fEditCurrent()
 void fEditStartPrg()
 {
 	wdt_start(wdt_60ms);
-	u8 val = readByteEE(addrStartPrg);
+	u8 val = readByteEE((u16)&ee_startprg);
 	u8 oldVal = val;
 	if (val > lastPrg)
 	{
@@ -790,10 +887,136 @@ void fEditStartPrg()
 			return;
 	}
 }
+
+void fEditPedalNum()
+{
+	wdt_start(wdt_60ms);
+	u8 val = readByteEE((u16)&ee_pedalnum);
+	u8 oldVal = val;
+	if (val < minPedalNum || val > maxPedalNum)
+	{
+		val = minPedalNum;
+		UpdateLcdParam(cmnprmPedalNum, val);
+	}
+	while(1)
+	{
+		if (flags.scanKey)
+		{
+			wdt_feed();
+			switch(get_key())
+			{
+				case keyLeft:
+					val = minPedalNum;
+					UpdateLcdParam(cmnprmPedalNum, val);
+					break;
+				case keyRight:
+					val = maxPedalNum;
+					UpdateLcdParam(cmnprmPedalNum, val);
+					break;
+				case keyUp:
+					SavedDlg(0);
+					SetMenu(&mCmnPrmPedalNum);
+					return;
+				case keyDown:
+					if (val != oldVal)
+						SetValue(cmnprmPedalNum, val);
+					SavedDlg(1);
+					SetMenu(&mCmnPrmPedalNum);
+				return;
+			}
+		}
+		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
+		return;
+	}
+}
+void fEditBrtns()
+{
+	wdt_start(wdt_60ms);
+	u8 val = readByteEE((u16)&ee_brtns);
+	u8 oldVal = val;
+	if (val != ON && val != OFF)
+	{
+		val = ON;
+		UpdateLcdParam(cmnprmBrtns, val);
+	}
+	while(1)
+	{
+		if (flags.scanKey)
+		{
+			wdt_feed();
+			switch(get_key())
+			{
+				case keyLeft:
+					val = OFF;
+					UpdateLcdParam(cmnprmBrtns, val);
+					switchBrightness(OFF);
+				break;
+				case keyRight:
+					val = ON;
+					UpdateLcdParam(cmnprmBrtns, val);
+					switchBrightness(ON);
+				break;
+				case keyUp:
+					SavedDlg(0);
+					SetMenu(&mCmnPrmBrtns);
+					switchBrightness(oldVal);
+				return;
+				case keyDown:
+					if (val != oldVal)
+					SetValue(cmnprmBrtns, val);
+					SavedDlg(1);
+					SetMenu(&mCmnPrmBrtns);
+				return;
+			}
+		}
+		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
+		return;
+	}
+}
+extern unsigned char m_nModbusId;
+void fEditModbusId()
+{
+	wdt_start(wdt_60ms);
+	u8 val = m_nModbusId;//readByteEE((u16)&ee_modbus_id);
+	while(1)
+	{
+		if (flags.scanKey)
+		{
+			wdt_feed();
+			switch(get_key())
+			{
+				case keyLeft:
+					if (val > MIN_MODBUS_ID)
+						val--;
+					else
+						val = MAX_MODBUS_ID;
+					UpdateLcdParam(cmnprmModbusId, val);
+				break;
+				case keyRight:
+					if (val < MAX_MODBUS_ID)
+						val++;
+					else
+						val = MIN_MODBUS_ID;
+					UpdateLcdParam(cmnprmModbusId, val);
+				break;
+				case keyUp:
+					SavedDlg(0);
+					SetMenu(&mCmnPrmModbusId);
+				return;
+				case keyDown:
+					SavedDlg(SetValue(cmnprmModbusId, val));
+					SetMenu(&mCmnPrmModbusId);
+				return;
+			}
+		}
+		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
+		return;
+	}
+}
 void fEditMode()
 {
 	wdt_start(wdt_60ms);
-	u8 val = readByteEE(curPrg.get() * paramNum + addrMode);
+	u8 val = readByteEE((u16)&eeMass + curPrg.get() * paramNum + addrMode);
 	u8 oldVal = val;
 	if (val > LAST_MODE)
 	{
@@ -808,11 +1031,13 @@ void fEditMode()
 			switch(get_key())
 			{
 				case keyLeft:
-					val = SIMPLE_MODE;
+					if (val > FIRST_MODE)
+						val--;
 					UpdateLcdParam(paramMode, val);
 				break;
 				case keyRight:
-					val = AUTO_MODE;
+					if (val < LAST_MODE)
+						val++;
 					UpdateLcdParam(paramMode, val);
 				break;
 				case keyUp:
@@ -834,11 +1059,11 @@ void fEditMode()
 void fEditPause()
 {
 	wdt_start(wdt_60ms);
-	u8 val = readByteEE(curPrg.get() * paramNum + addrPause);
+	u8 val = readByteEE((u16)&eeMass + curPrg.get() * paramNum + addrPause);
 	u8 oldVal = val;
 	if (val > MAX_PAUSE || val < MIN_PAUSE)
 	{
-		val = SIMPLE_MODE;
+		val = MIN_PAUSE;
 		UpdateLcdParam(paramPause, val);
 	}
 	while(1)
