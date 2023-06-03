@@ -82,6 +82,25 @@ void Wr1Dec(u8 a_data, u8 a_x, u8 a_y)
 	lcd_data(l);
 #endif
 }
+
+char get_hex_char(u8 a_data)
+{
+	a_data &= 0x0f;
+	if (a_data < 10)
+		return a_data + 0x30;
+	return 0x61 - 0xa + a_data;
+}
+
+void WrHex(u8 a_data, u8 a_x, u8 a_y)
+{
+#ifndef _DEBUG_
+	u8 l = a_data & 0x0f;
+	u8 h = a_data >> 4;
+	lcd_gotoxy(a_x, a_y);
+	lcd_data(get_hex_char(h));
+	lcd_data(get_hex_char(l));
+#endif
+}
 //===================================================================
 void SendStr(u8 * str, char num)
 {
