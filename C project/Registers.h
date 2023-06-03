@@ -9,6 +9,20 @@
 #ifndef REGISTERS_H_
 #define REGISTERS_H_
 
+typedef enum
+{
+	MB_EX_NONE = 0x00,
+	MB_EX_ILLEGAL_FUNCTION = 0x01,
+	MB_EX_ILLEGAL_DATA_ADDRESS = 0x02,
+	MB_EX_ILLEGAL_DATA_VALUE = 0x03,
+	MB_EX_SLAVE_DEVICE_FAILURE = 0x04,
+	MB_EX_ACKNOWLEDGE = 0x05,
+	MB_EX_SLAVE_BUSY = 0x06,
+	MB_EX_MEMORY_PARITY_ERROR = 0x08,
+	MB_EX_GATEWAY_PATH_FAILED = 0x0A,
+	MB_EX_GATEWAY_TGT_FAILED = 0x0B
+} eMBException;
+
 // Карта регистров modbus.
 // В регистрах по адресу PROGRAMM_X содержатся ещё регистры настроек программ,
 // которые описаны как смещение адреса в енуме tagParams (paramPrePressing - paramPause).
@@ -31,7 +45,7 @@ enum Modbus_hold_regs
 	CMN_START_PRG,
 	CMN_LIGTH,
 	CMN_PEDAL_NUM,
-	CMN_MODBUS_ID,
+	CMN_LAST_PARAM = CMN_PEDAL_NUM,
 };
 
 

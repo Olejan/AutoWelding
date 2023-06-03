@@ -1,4 +1,4 @@
-//ATmega8
+//ATmega8, ATmega16
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdbool.h>
@@ -8,9 +8,9 @@
 
 /*unsigned char RcCount, TrCount;  //счетчик принятых/переданных данных
 bool StartRec = false;// false/true начало/прием посылки
-bool bModBus = false;  //флаг обработки посылки*/
-extern unsigned char cNumRcByte0; //кол-во принятых байт
-extern unsigned char cNumTrByte0;  //кол-во передаваемых байт
+bool bModBus = false;  //флаг обработки посылки
+unsigned char cNumRcByte0; //кол-во принятых байт
+unsigned char cNumTrByte0;  //кол-во передаваемых байт*/
 extern unsigned char cmRcBuf0[MAX_LENGHT_REC_BUF]; //буфер принимаемых данных
 extern unsigned char cmTrBuf0[MAX_LENGHT_TR_BUF]; //буфер передаваемых данных
 
@@ -22,6 +22,7 @@ char Func03(void);
 //char Func04(void);
 //char Func05(void);
 char Func06(void);
+char Func16(void);
 char ErrorMessage(char Error);
 unsigned int GetCRC16(unsigned char* buf, unsigned char bufsize);
 
@@ -88,6 +89,12 @@ unsigned char ModBus(unsigned char NumByte)
 		return Func06();
 	}
 
+	case 0x10:
+	{
+		if (!QUANTITY_REG_4X) return ErrorMessage(0x01);
+		return Func16();
+	}
+
 	default:   return ErrorMessage(0x01); //Принятый код функции не может быть обработан
 	} //end switch
 } //end ModBus()
@@ -134,6 +141,8 @@ char ErrorMessage(char Error)
 #define max_adress (start_adress + quantity_registers)
 #define reg_adress (start_adress)
 #define value (quantity_registers)
+#define num_to_write (cmRcBuf0[6]) // количество байт данных для записи в функции 0x10
+#define data_pointer (cmRcBuf0 + 7) // указатель на данные для записи в регистры
 /*//побитовая запись
 #define I_byte (reg_adress/8)
 #define I_bit (reg_adress%8)
@@ -205,15 +214,28 @@ char Func02(void)
 void led_switch(unsigned char line);
 int get_param(int reg);
 
-bool check_request(int reg, int num)
+/*
+* Проверяет входные данные на валидность и возвращает код ошибки:
+* - 0 - данные валидны
+* 2 - ILLEGAL_DATA_ADDRESS
+* 3 - ILLEGAL_DATA_VALUE
+*/
+uint8_t check_request(int reg, int num)
 {
-	if (reg >= CMN_CUR_PRG && (reg + num) <= CMN_MODBUS_ID)
-		return true;
+	if (reg > CMN_LAST_PARAM)
+		return MB_EX_ILLEGAL_DATA_ADDRESS;
+	if (reg >= CMN_CUR_PRG && reg <= CMN_LAST_PARAM)
+	{
+		if ((reg + num) <= CMN_LAST_PARAM)
+			return MB_EX_NONE;
+	}
 	u8 prg = reg / 0x10;
 	u8 param = reg % 0x10;
-	if (prg <=9 && (param + num - 1) <= addrLastParam)
-		return true;
-	return false;
+	if (prg <= lastPrg && (param + num - 1) <= addrLastParam)
+		return MB_EX_NONE;
+	if (num > paramNum)
+		return MB_EX_ILLEGAL_DATA_VALUE;
+	return MB_EX_ILLEGAL_DATA_ADDRESS;
 }
 
 //реализация функции 0х03
@@ -225,12 +247,10 @@ char Func03(void)
 
 	led_switch(pin_PRE_PRESSING_HL);
 
-	//проверка корректного адреса в запросе
-	//if (!(max_adress <= QUANTITY_REG_4X))
-	if (!check_request(start_adress, quantity_registers))
-		return ErrorMessage(0x02); //Адрес данных, указанный в запросе, недоступен
-	if (!quantity_registers)
-		return ErrorMessage(0x07);//проверяем что количество регистров на чтение > 0 *******************************************************************************проверить работу***********************
+	//проверка корректного адреса в запросе и количество регистров на чтение
+	char err = check_request(start_adress, quantity_registers);
+	if (err != MB_EX_NONE)
+		return ErrorMessage(err); //Адрес данных, указанный в запросе, недоступен
 
 	for (int i = 0; i < quantity_registers; i++)
 	{
@@ -318,30 +338,66 @@ char Func05(void)
 #endif
 
 
+int set_param(int reg, int val);
 //реализация функции 0х06
 //запись значения в один регистр хранения (Preset Single Register)
 char Func06(void)
 {
-	//проверка корректного адреса в запросе
-	if (!(reg_adress <= QUANTITY_REG_4X)) return ErrorMessage(0x02); //Адрес данных, указанный в запросе, недоступен
-	//проверка корректных данных в запросе
+	//проверка корректного адреса
+	uint8_t err = check_request(start_adress, 1);
+	if (err != MB_EX_NONE)
+		return ErrorMessage(err); //Адрес данных, указанный в запросе, недоступен
+	// Установка заданного параметра
+	err = set_param(reg_adress, value);
+	if (err != MB_EX_NONE)
+		return ErrorMessage(MB_EX_ILLEGAL_DATA_VALUE);
 
 	//формируем ответ, возвращая полученное сообщение
-	if (1)//при необходимости поставить контроль значений
-	{
-		RegNum4x[reg_adress] = value;
-		cmTrBuf0[1] = cmRcBuf0[1];
-		cmTrBuf0[2] = cmRcBuf0[2];
-		cmTrBuf0[3] = cmRcBuf0[3];
-		cmTrBuf0[4] = cmRcBuf0[4];
-		cmTrBuf0[5] = cmRcBuf0[5];
-		cmTrBuf0[6] = cmRcBuf0[6];
-		cmTrBuf0[7] = cmRcBuf0[7];
-		return 8;
-	} //end if()
-	else
-	{
-		return ErrorMessage(0x03);//Значение, содержащееся в поле данных запроса, является недопустимой величиной
-	}
-	return 0;
+	RegNum4x[reg_adress] = value;
+	cmTrBuf0[1] = cmRcBuf0[1];
+	cmTrBuf0[2] = cmRcBuf0[2];
+	cmTrBuf0[3] = cmRcBuf0[3];
+	cmTrBuf0[4] = cmRcBuf0[4];
+	cmTrBuf0[5] = cmRcBuf0[5];
+	cmTrBuf0[6] = cmRcBuf0[6];
+	cmTrBuf0[7] = cmRcBuf0[7];
+	return 8;
 } //end Func06(void)
+
+void WrHex(u8 a_data, u8 a_x, u8 a_y);
+//реализация функции 0х10
+//Запись значений в несколько регистров хранения (Write Holding Registers)
+char Func16(void)
+{
+	unsigned int CRC16;
+
+	//проверка корректного адреса в запросе и количество регистров на чтение
+	char err = check_request(start_adress, quantity_registers);
+	if (err != MB_EX_NONE)
+		return ErrorMessage(err); //Адрес данных, указанный в запросе, недоступен
+	
+	int res;
+	for (int i = 0; i < num_to_write / 2; i++)
+	{
+		res = check_param(start_adress + i, *(data_pointer + i * 2 + 1));
+		if (res != MB_EX_NONE)
+			return ErrorMessage(res);
+	}
+	int cnt = 0;
+	for (int i = 0; i < num_to_write / 2; i++)
+	{
+		set_param(start_adress + i, *(data_pointer + i * 2 + 1));
+	}
+	//WrHex(res, 0, lcdstr1);
+
+	//формируем ответ
+	cmTrBuf0[1] = cmRcBuf0[1];
+	cmTrBuf0[2] = cmRcBuf0[2];
+	cmTrBuf0[3] = cmRcBuf0[3];
+	cmTrBuf0[4] = cmRcBuf0[4];
+	cmTrBuf0[5] = cmRcBuf0[5];
+	CRC16 = GetCRC16(cmTrBuf0, 6);//подсчет КС посылки
+	cmTrBuf0[6] = Low(CRC16);
+	cmTrBuf0[7] = Hi(CRC16);
+	return 8;
+} //end Func16(void)

@@ -399,7 +399,7 @@ typedef struct
 	u16 T1IsUp	:1;	// прошло 100мкс
 	u16 useT1forHeating	:1;	// сейчас задача нагрева
 	u16 alarm		:1;	// зарегистрированно состояние аварии
-	u16 modbus_enabled	:1; // Modbus активен
+	//u16 modbus_enabled	:1; // Modbus активен
 	u16 t3_5_started	:1;
 }tagFlags;
 

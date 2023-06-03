@@ -35,18 +35,17 @@ extern __attribute__((section(".eeprom")))u8 ee_modbus_id;
 // Data
 //=================================================================
 
-/*static*/ u8 m_nPrePressing = 0; // число предварительного сжати€
-/*static*/ u8 m_nPressing = 0; // число сжати€
-/*static*/ u8 m_nModulation = 0; // число модул€ции
-/*static*/ u8 m_nCurrent = 0; // число мощности тока
-/*static*/ u8 m_nHeating = 0; // число нагрева
-/*static*/ u8 m_nForging = 0; // число проковки
+/*static*/ u8 m_nPrePressing = minPrePressing; // число предварительного сжати€
+/*static*/ u8 m_nPressing = minPressing; // число сжати€
+/*static*/ u8 m_nModulation = minModulation; // число модул€ции
+/*static*/ u8 m_nCurrent = minCurrent; // число мощности тока
+/*static*/ u8 m_nHeating = minHeating; // число нагрева
+/*static*/ u8 m_nForging = minForging; // число проковки
 /*static*/ u8 m_nMode = AUTO_MODE;
 /*static*/ u8 m_nPause = MAX_PAUSE;
-/*static*/ u8 m_nCurPrg = 0; // текуща€ программа
-/*static*/ u8 m_nPedalNum = 2; // количество педалей
+/*static*/ u8 m_nCurPrg = firstPrg; // текуща€ программа
+/*static*/ u8 m_nPedalNum = maxPedalNum; // количество педалей
 /*static*/ u8 m_nBrtns = ON;
-//static u8 m_nModbusId = 255; // Modbus Id
 extern unsigned char m_nModbusId;
 
 static u8 m_TaskWelding_State = 0; // состо€ние задачи сварки		
@@ -796,7 +795,7 @@ int get_param(int reg)
 	switch (reg)
 	{
 	case CMN_CUR_PRG:
-		return m_nCurPrg;
+		return curPrg.get();
 	case CMN_START_PRG:
 		return readByteEE((u16)&ee_startprg);
 	case CMN_LIGTH:
@@ -806,9 +805,116 @@ int get_param(int reg)
 	}
 	u8 prg = reg / 0x10;
 	u8 param = reg % 0x10;
-	if (prg > 9 || param > addrLastParam)
+	if (prg > lastPrg || param > addrLastParam)
 		return -1;
 	return readByteEE((u16)&eeMass + ((int)prg * paramNum + param));
+}
+
+bool check_prg(int prg)
+{
+	return prg >= firstPrg && prg <= lastPrg;
+}
+bool check_light(int val)
+{
+	return val == ON || val == OFF;
+}
+bool check_pedal_num(int val)
+{
+	return val == minPedalNum || val == maxPedalNum;
+}
+bool check_prg_param(uint8_t param, int val)
+{
+	switch (param)
+	{
+		case paramPrePressing:
+			return val >= minPrePressing && val <= maxPrePressing;
+		case paramPressing:
+			return val >= minPressing && val <= maxPressing;
+		case paramModulation:
+			return val >= minModulation && val <= maxModulation;
+		case paramCurrent:
+			return val >= minCurrent && val <= maxCurrent;
+		case paramHeating:
+			return val >= minHeating && val <= maxHeating;
+		case paramForging:
+			return val >= minForging && val <= maxForging;
+		case paramMode:
+			return val == SIMPLE_MODE || val == AUTO_MODE || val == SEAM_MODE;
+		case paramPause:
+			return val >= MIN_PAUSE && val <= MAX_PAUSE;
+	}
+	return false;
+}
+
+
+// ѕроверка входных данных на валидность
+int check_param(int reg, int val)
+{
+	switch (reg)
+	{
+	case CMN_CUR_PRG:
+		if (!check_prg(val))
+			return MB_EX_ILLEGAL_DATA_VALUE;
+		return MB_EX_NONE;
+	case CMN_START_PRG:
+		if (!check_prg(val))
+			return MB_EX_ILLEGAL_DATA_VALUE;
+		return MB_EX_NONE;
+	case CMN_LIGTH:
+		if (!check_light(val))
+			return MB_EX_ILLEGAL_DATA_VALUE;
+		return MB_EX_NONE;
+	case CMN_PEDAL_NUM:
+		if (!check_pedal_num(val))
+			return MB_EX_ILLEGAL_DATA_VALUE;
+		return MB_EX_NONE;
+	}
+	u8 prg = reg / 0x10;
+	u8 param = reg % 0x10;
+	if (prg > lastPrg || param > addrLastParam)
+		return MB_EX_ILLEGAL_DATA_ADDRESS;
+	if (!check_prg_param(param, val))
+		return MB_EX_ILLEGAL_DATA_VALUE;
+	return MB_EX_NONE;
+}
+
+// ”становка измен€емых извне параметров
+int set_param(int reg, int val)
+{
+	switch (reg)
+	{
+	case CMN_CUR_PRG:
+		if (!check_prg(val))
+			return MB_EX_ILLEGAL_DATA_VALUE;
+		curPrg.set(val);
+		UpdateParams();
+		return MB_EX_NONE;
+	case CMN_START_PRG:
+		if (!check_prg(val))
+			return MB_EX_ILLEGAL_DATA_VALUE;
+		writeByteEE((u16)&ee_startprg, val);
+		return MB_EX_NONE;
+	case CMN_LIGTH:
+		if (!check_light(val))
+			return MB_EX_ILLEGAL_DATA_VALUE;
+		writeByteEE((u16)&ee_brtns, val);
+		return MB_EX_NONE;
+	case CMN_PEDAL_NUM:
+		if (!check_pedal_num(val))
+			return MB_EX_ILLEGAL_DATA_VALUE;
+		writeByteEE((u16)&ee_pedalnum, val);
+		return MB_EX_NONE;
+	}
+	u8 prg = reg / 0x10;
+	u8 param = reg % 0x10;
+	if (prg > lastPrg || param > addrLastParam)
+		return MB_EX_ILLEGAL_DATA_ADDRESS;
+	if (!check_prg_param(param, val))
+		return MB_EX_ILLEGAL_DATA_VALUE;
+	writeByteEE((u16)&eeMass + ((int)prg * paramNum + param), val);
+	if (prg == curPrg.get())
+		UpdateParams();
+	return MB_EX_NONE;
 }
 
 #if 0

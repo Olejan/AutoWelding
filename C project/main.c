@@ -166,6 +166,7 @@ void CheckModBus(void)
 {
 	if (bModBus)
 	{
+		wdt_start(wdt_2s);
 		cNumTrByte0 = ModBus(cNumRcByte0); //обработка принятого соообщения ModBus
 		if (cNumTrByte0 != 0)
 		{
@@ -173,6 +174,7 @@ void CheckModBus(void)
 			StartTrans();
 		} //end if (cNumTrByte0!=0)
 		bModBus = false;
+		wdt_start(wdt_60ms);
 	} //end if (bModBus)
 } //end CheckModBus(void)
 //-----------------------------Прерывания-------------------------------

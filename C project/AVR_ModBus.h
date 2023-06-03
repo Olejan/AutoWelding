@@ -21,7 +21,7 @@
 * 30001-39999 - Чтение	Analog Input Registers	(AI)
 * 40001-49999 - Чтение-запись	Analog Output Holding Registers	(AO)
 * количество регистров задается в одно-байтной переменной QuantityRegYx, Y - 0,1,3,4
-* c адресацией соответственно от 0 до 256.
+* c адресацией соответственно от 0 до 255.
 */
 
 #pragma once
@@ -29,7 +29,7 @@
 #define Hi(Int) (char) (Int>>8)
 #define Low(Int) (char) (Int)
 
-//#define F_CPU 8000000L
+//#define F_CPU 4000000L
 
 //UART
 #define BAUD_RATE 9600L
@@ -45,8 +45,8 @@
 //ID оборудования
 #define SLAVE_ID 0x0A
 //максимальный размер буфера принимаемых(Rx)/передаваемых(Tx) по UART данных, байт.
-#define MAX_LENGHT_REC_BUF 25
-#define MAX_LENGHT_TR_BUF 25
+#define MAX_LENGHT_REC_BUF 32
+#define MAX_LENGHT_TR_BUF 32
 //количество регистров
 #define QUANTITY_REG_0X 4 //количество дискретных выходов (DO) / r0x01, w0x05, w0x0F(15)
 #define QUANTITY_REG_1X 2 //количество дискретных входов (DI) / r0x02
