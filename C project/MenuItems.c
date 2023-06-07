@@ -55,11 +55,9 @@ __attribute__((section(".eeprom")))u8 ee_modbus_id = MAX_MODBUS_ID;
 //=========================== строки меню ===========================
 const char PROGMEM
 	_Empty[]			= "                ",
-#ifdef USE_MODBUS
 	_ModbusId[]			= "Modbus ID    247",
-#endif //USE_MODBUS
 #ifndef _RUSSIAN_VERSION_
-	_ViewInfo1[]		= "Ver.  14.05.17T ",
+	_ViewInfo1[]		= "Ver.  08.06.23T ",
 	_InfoAuto[]			= "Auto (Pause    )",
 	_InfoSeam[]			= "Mode is Seam    ",
 	_InfoSimple[]		= "Mode is Simple  ",
@@ -110,9 +108,9 @@ const char PROGMEM
 	_ReleaseIt[]		= "  - release it  ";
 #else
 #ifdef MVL
-	_ViewInfo1[]		= "Версия 02.03.23M",
+	_ViewInfo1[]		= "Версия 08.06.23M",
 #else
-	_ViewInfo1[]		= "Версия 02.03.23T",
+	_ViewInfo1[]		= "Версия 08.06.23T",
 #endif
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSeam[]			= "Режим Шовный    ",
@@ -176,9 +174,7 @@ const MenuItem
 	mCmnPrmStartPrg		PROGMEM = { idChooseStartPrg,	_CommonStngs,	_StartPrg,		fCmnPrmStartPrg },
 	mCmnPrmPedalNum		PROGMEM = { idChoosePedalNum,	_CommonStngs,	_PedalNum,		fCmnPrmPedalNum },
 	mCmnPrmBrtns		PROGMEM = { idChooseBrightness,	_CommonStngs,	_Brightness,	fCmnPrmBrtns	},
-#ifdef USE_MODBUS
 	mCmnPrmModbusId		PROGMEM = { idChooseModbusId,	_CommonStngs,	_ModbusId,		fCmnPrmModbusId },
-#endif //USE_MODBUS
 	mParamMode			PROGMEM = { idChooseMode,		_ChooseParam,	_Mode,			fParamMode },
 	mParamPrePressing	PROGMEM = { idChoosePrePressing,_ChooseParam,	_PrePressing,	fParamPrePressing },
 	mParamPressing		PROGMEM = { idChoosePressing,	_ChooseParam,	_Pressing,		fParamPressing },
@@ -190,9 +186,7 @@ const MenuItem
 	mEditStartPrg		PROGMEM = { idEditStartPrg,		_Editing, 		_StartPrg,		fEditStartPrg },
 	mEditPedalNum		PROGMEM = { idEditPedalNum,		_Editing, 		_PedalNum,		fEditPedalNum },
 	mEditBrtns			PROGMEM = {	idEditBrightness,	_Editing,		_Brightness,	fEditBrtns },
-#ifdef USE_MODBUS
 	mEditModbusId		PROGMEM = { idEditModbusId,		_Editing,		_ModbusId,		fEditModbusId },
-#endif //USE_MODBUS
 	mEditMode			PROGMEM = { idEditMode,			_Editing,		_Mode,			fEditMode },
 	mEditPrePressing	PROGMEM = { idEditPrePressing,	_Editing,		_PrePressing,	fEditPrePressing },
 	mEditPressing		PROGMEM = { idEditPressing,		_Editing,		_Pressing,		fEditPressing },

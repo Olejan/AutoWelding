@@ -1,13 +1,7 @@
 // !!! Проект собирается в AtmelStudio 7.
 // Выбирается нужная конфигурация Release или Debug и жмётся Build
 
-//#define _DEBUG_
-#define _RUSSIAN_VERSION_
-#define WDT_ENABLE
-#define LED_COMMON_CATHODE	/* светодиоды подключены с общим катодом */
-#define MVL /*Версия распиновки Моя и В.Метелицы*/
-#define _CHECK_SI_ /* Проверяем СИ на старте */
-#define USE_MODBUS // Используем Modbus
+#include "config.h"
 
 #ifdef _RUSSIAN_VERSION_
 //Русские буквы

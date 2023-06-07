@@ -175,6 +175,23 @@ void switchHL(u8 line, u8 state)
 #endif
 }
 
+void led_on(u8 pin)
+{
+#ifdef LED_COMMON_CATHODE
+	PORT_LED &= ~(1 << pin);
+#else
+	PORT_LED |= 1 << pin;
+#endif
+}
+
+void led_off(u8 pin)
+{
+#ifdef LED_COMMON_CATHODE
+	PORT_LED |= 1 << pin;
+#else
+	PORT_LED &= ~(1 << pin);
+#endif
+}
 
 void led_switch(u8 line)
 {

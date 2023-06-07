@@ -1,6 +1,4 @@
 //ATmega8, ATmega16
-#include <avr/io.h>
-#include <avr/interrupt.h>
 #include <stdbool.h>
 #include <util/crc16.h>
 #include "AVR_ModBus.h"
@@ -25,6 +23,7 @@ char Func06(void);
 char Func16(void);
 char ErrorMessage(char Error);
 unsigned int GetCRC16(unsigned char* buf, unsigned char bufsize);
+int check_param(int reg, int val);
 
 
 extern unsigned char m_nModbusId;
@@ -126,7 +125,6 @@ char ErrorMessage(char Error)
 	CRC16 = GetCRC16(cmTrBuf0, 3);//подсчет КС посылки
 	cmTrBuf0[3] = Low(CRC16);
 	cmTrBuf0[4] = Hi(CRC16);
-
 	return 5;
 } //end ErrorMessage()
 
@@ -211,7 +209,6 @@ char Func02(void)
 
 #include "IDE.h"
 #include "Registers.h"
-void led_switch(unsigned char line);
 int get_param(int reg);
 
 /*
@@ -226,7 +223,7 @@ uint8_t check_request(int reg, int num)
 		return MB_EX_ILLEGAL_DATA_ADDRESS;
 	if (reg >= CMN_CUR_PRG && reg <= CMN_LAST_PARAM)
 	{
-		if ((reg + num) <= CMN_LAST_PARAM)
+		if ((reg + num - 1) <= CMN_LAST_PARAM)
 			return MB_EX_NONE;
 	}
 	u8 prg = reg / 0x10;
@@ -244,8 +241,6 @@ char Func03(void)
 {
 	unsigned int CRC16;
 	unsigned char i;
-
-	led_switch(pin_PRE_PRESSING_HL);
 
 	//проверка корректного адреса в запросе и количество регистров на чтение
 	char err = check_request(start_adress, quantity_registers);
@@ -375,7 +370,7 @@ char Func16(void)
 	char err = check_request(start_adress, quantity_registers);
 	if (err != MB_EX_NONE)
 		return ErrorMessage(err); //Адрес данных, указанный в запросе, недоступен
-	
+
 	int res;
 	for (int i = 0; i < num_to_write / 2; i++)
 	{
@@ -383,7 +378,6 @@ char Func16(void)
 		if (res != MB_EX_NONE)
 			return ErrorMessage(res);
 	}
-	int cnt = 0;
 	for (int i = 0; i < num_to_write / 2; i++)
 	{
 		set_param(start_adress + i, *(data_pointer + i * 2 + 1));
