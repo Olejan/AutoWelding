@@ -328,6 +328,9 @@ enum tagParams
 	defHeating		= 30,
 	defForging		= 10,
 	DEF_PAUSE		= 25,
+
+	DEF_PEDAL_NUM	= 2,
+	DEF_START_PRG	= 0,
 };
 //!!// addr... и param... взаимозависимы, смотри welding.c GetValue()
 enum tagEEPROMAddr

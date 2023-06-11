@@ -48,8 +48,8 @@ u8 eeMass[programNumber][paramNum] =
 	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE},
 	{defPrePressing,	defPressing,	defModulation,	defCurrent,		defHeating,		defForging,		SIMPLE_MODE,	DEF_PAUSE}
 };
-__attribute__((section(".eeprom")))u8 ee_startprg = 2;
-__attribute__((section(".eeprom")))u8 ee_pedalnum = 2;
+__attribute__((section(".eeprom")))u8 ee_startprg = DEF_START_PRG;
+__attribute__((section(".eeprom")))u8 ee_pedalnum = DEF_PEDAL_NUM;
 __attribute__((section(".eeprom")))u8 ee_brtns = ON;
 __attribute__((section(".eeprom")))u8 ee_modbus_id = MAX_MODBUS_ID;
 //=========================== строки меню ===========================
@@ -57,7 +57,7 @@ const char PROGMEM
 	_Empty[]			= "                ",
 	_ModbusId[]			= "Modbus ID    247",
 #ifndef _RUSSIAN_VERSION_
-	_ViewInfo1[]		= "Ver.  08.06.23T ",
+	_ViewInfo1[]		= "Ver.  11.06.23T ",
 	_InfoAuto[]			= "Auto (Pause    )",
 	_InfoSeam[]			= "Mode is Seam    ",
 	_InfoSimple[]		= "Mode is Simple  ",
@@ -108,9 +108,9 @@ const char PROGMEM
 	_ReleaseIt[]		= "  - release it  ";
 #else
 #ifdef MVL
-	_ViewInfo1[]		= "Версия 08.06.23M",
+	_ViewInfo1[]		= "Версия 11.06.23M",
 #else
-	_ViewInfo1[]		= "Версия 08.06.23T",
+	_ViewInfo1[]		= "Версия 11.06.23T",
 #endif
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSeam[]			= "Режим Шовный    ",
@@ -242,6 +242,28 @@ void fInfo()
 	SetMenu(&mPrograms);
 	wdt_start(wdt_60ms);
 }
+void set_sqreen_menu(const MenuItem* left_m, const MenuItem* right_m, const MenuItem* up_m, const MenuItem* down_m)
+{
+	if (flags.scanKey)
+	{
+		switch(get_key())
+		{
+			case keyLeft:
+				SetMenu(left_m);
+				break;
+			case keyRight:
+				SetMenu(right_m);
+			break;
+			case keyUp:
+				SetMenu(up_m);
+			break;
+			case keyDown:
+				SetMenu(down_m);
+			break;
+		}
+	}
+}
+
 void fPrograms()
 {
 	if (flags.scanKey)
@@ -273,829 +295,192 @@ void fPrograms()
 }
 void fChoosePrgStngs()
 {
-	if (flags.scanKey)
-	{
-		switch(get_key())
-		{
-			case keyLeft:
-			case keyRight:
-				SetMenu(&mChooseCmnStngs);
-			break;
-			case keyUp:
-				SetMenu(&mPrograms);
-			break;
-			case keyDown:
-				SetMenu(&mParamMode);
-			break;
-		}
-	}
+	set_sqreen_menu(&mChooseCmnStngs, &mChooseCmnStngs, &mPrograms, &mParamMode);
 }
 void fChooseCmnStngs()
 {
-	if (flags.scanKey)
-	{
-		switch(get_key())
-		{
-			case keyLeft:
-			case keyRight:
-				SetMenu(&mChoosePrgStngs);
-			break;
-			case keyUp:
-				SetMenu(&mPrograms);
-			break;
-			case keyDown:
-				SetMenu(&mCmnPrmStartPrg);
-			break;
-		}
-	}
+	set_sqreen_menu(&mChoosePrgStngs, &mChoosePrgStngs, &mPrograms, &mCmnPrmStartPrg);
 }
 void fCmnPrmStartPrg()
 {
-	if (flags.scanKey)
-		switch(get_key())
-		{
-			case keyLeft:
-				SetMenu(&mCmnPrmModbusId);
-			break;
-			case keyRight:
-				SetMenu(&mCmnPrmBrtns);
-			break;
-			case keyUp:
-				SetMenu(&mChooseCmnStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditStartPrg);
-			break;
-		}
+	set_sqreen_menu(&mCmnPrmModbusId, &mCmnPrmBrtns, &mChooseCmnStngs, &mEditStartPrg);
 }
 void fCmnPrmBrtns()
 {
-	if (flags.scanKey)
-		switch (get_key())
-		{
-			case keyLeft:
-				SetMenu(&mCmnPrmStartPrg);
-			break;
-			case keyRight:
-				SetMenu(&mCmnPrmPedalNum);
-			break;
-			case keyUp:
-				SetMenu(&mChooseCmnStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditBrtns);
-			break;
-		}
+	set_sqreen_menu(&mCmnPrmStartPrg, &mCmnPrmPedalNum, &mChooseCmnStngs, &mEditBrtns);
 }
 void fCmnPrmPedalNum()
 {
-	if (flags.scanKey)
-		switch(get_key())
-		{
-			case keyLeft:
-				SetMenu(&mCmnPrmBrtns);
-			break;
-			case keyRight:
-				SetMenu(&mCmnPrmModbusId);
-			break;
-			case keyUp:
-				SetMenu(&mChooseCmnStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditPedalNum);
-			break;
-		}
+	set_sqreen_menu(&mCmnPrmBrtns, &mCmnPrmModbusId, &mChooseCmnStngs, &mEditPedalNum);
 }
 void fCmnPrmModbusId()
 {
-	if (flags.scanKey)
-	{
-		switch (get_key())
-		{
-			case keyLeft:
-				SetMenu(&mCmnPrmPedalNum);
-			break;
-			case keyRight:
-				SetMenu(&mCmnPrmStartPrg);
-			break;
-			case keyUp:
-				SetMenu(&mChooseCmnStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditModbusId);
-			break;
-		}
-	}
+	set_sqreen_menu(&mCmnPrmPedalNum, &mCmnPrmStartPrg, &mChooseCmnStngs, &mEditModbusId);
 }
 void fParamMode()
 {
-	if (flags.scanKey)
-	{
-		switch(get_key())
-		{
-			case keyLeft:
-				if (curMode.get() == AUTO_MODE)
-					SetMenu(&mParamPause);
-				else
-					SetMenu(&mParamForging);
-			break;
-			case keyRight:
-				SetMenu(&mParamPrePressing);
-			break;
-			case keyUp:
-				SetMenu(&mChoosePrgStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditMode);
-			break;
-		}
-	}
+	set_sqreen_menu(curMode.get() == AUTO_MODE ? &mParamPause : &mParamForging,
+		&mParamPrePressing,
+		&mChoosePrgStngs,
+		&mEditMode);
 }
 void fParamPrePressing()
 {
-	if (flags.scanKey)
-		switch(get_key())
-		{
-			case keyLeft:
-				SetMenu(&mParamMode);
-			break;
-			case keyRight:
-				SetMenu(&mParamPressing);
-			break;
-			case keyUp:
-				SetMenu(&mChoosePrgStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditPrePressing);
-			break;
-		}
+	set_sqreen_menu(&mParamMode, &mParamPressing, &mChoosePrgStngs, &mEditPrePressing);
 }
 void fParamPressing()
 {
-	if (flags.scanKey)
-		switch(get_key())
-		{
-			case keyLeft:
-				SetMenu(&mParamPrePressing);
-			break;
-			case keyRight:
-				SetMenu(&mParamModulation);
-			break;
-			case keyUp:
-				SetMenu(&mChoosePrgStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditPressing);
-			break;
-		}
+	set_sqreen_menu(&mParamPrePressing, &mParamModulation, &mChoosePrgStngs, &mEditPressing);
 }
 void fParamModulation()
 {
-	if (flags.scanKey)
-	switch(get_key())
-	{
-		case keyLeft:
-		SetMenu(&mParamPressing);
-		break;
-		case keyRight:
-		SetMenu(&mParamCurrent);
-		break;
-		case keyUp:
-		SetMenu(&mChoosePrgStngs);
-		break;
-		case keyDown:
-		SetMenu(&mEditModulation);
-		break;
-	}
+	set_sqreen_menu(&mParamPressing, &mParamCurrent, &mChoosePrgStngs, &mEditModulation);
 }
 void fParamCurrent()
 {
-	if (flags.scanKey)
-	switch(get_key())
-	{
-		case keyLeft:
-		SetMenu(&mParamModulation);
-		break;
-		case keyRight:
-		SetMenu(&mParamHeating);
-		break;
-		case keyUp:
-		SetMenu(&mChoosePrgStngs);
-		break;
-		case keyDown:
-		SetMenu(&mEditCurrent);
-		break;
-	}
+	set_sqreen_menu(&mParamModulation, &mParamHeating, &mChoosePrgStngs, &mEditCurrent);
 }
 void fParamHeating()
 {
-	if (flags.scanKey)
-		switch(get_key())
-		{
-			case keyLeft:
-				SetMenu(&mParamCurrent);
-			break;
-			case keyRight:
-				SetMenu(&mParamForging);
-			break;
-			case keyUp:
-				SetMenu(&mChoosePrgStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditHeating);
-			break;
-		}
+	set_sqreen_menu(&mParamCurrent, &mParamForging, &mChoosePrgStngs, &mEditHeating);
 }
 void fParamForging()
 {
-	if (flags.scanKey)
-		switch(get_key())
-		{
-			case keyLeft:
-				SetMenu(&mParamHeating);
-			break;
-			case keyRight:
-				if (curMode.get() == AUTO_MODE)
-					SetMenu(&mParamPause);
-				else
-					SetMenu(&mParamMode);
-			break;
-			case keyUp:
-				SetMenu(&mChoosePrgStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditForging);
-			break;
-		}
+	set_sqreen_menu(&mParamHeating,
+		curMode.get() == AUTO_MODE ? &mParamPause : &mParamMode,
+		&mChoosePrgStngs,
+		&mEditForging);
 }
 void fParamPause()
 {
-	if (flags.scanKey)
+	set_sqreen_menu(&mParamForging, &mParamMode, &mChoosePrgStngs, &mEditPause);
+}
+void set_edit_sqreen_menu(u8 val, u8 param, u8 min, u8 max, const MenuItem* menu)
+{
+	wdt_start(wdt_60ms);
+	u8 oldVal = val;
+	//if (val > max)
+	if (!(val >= min && val <= max))
 	{
-		switch(get_key())
+		val = min;
+		UpdateLcdParam(param, val);
+	}
+	NoteTime();
+	while(1)
+	{
+		if (flags.scanKey)
 		{
-			case keyLeft:
-				SetMenu(&mParamForging);
-			break;
-			case keyRight:
-				SetMenu(&mParamMode);
-			break;
-			case keyUp:
-				SetMenu(&mChoosePrgStngs);
-			break;
-			case keyDown:
-				SetMenu(&mEditPause);
-			break;
+			wdt_feed();
+			switch(get_key())
+			{
+				case keyLeft:
+					if (param == cmnprmPedalNum)
+						val = min;
+					else if (param == cmnprmBrtns)
+					{
+						val = OFF;
+						switchBrightness(OFF);
+					}
+					else if (param == paramMode)
+					{
+						if (val > FIRST_MODE)
+							val--;
+					}
+					else if (val > min)
+						val--;
+					else
+						val = max;
+					UpdateLcdParam(param, val);
+				break;
+				case keyRight:
+					if (param == cmnprmPedalNum)
+						val = max;
+					else if (param == cmnprmBrtns)
+					{
+						val = ON;
+						switchBrightness(ON);
+					}
+					else if (param == paramMode)
+					{
+						if (val < LAST_MODE)
+							val++;
+					}
+					else if (val < max)
+						val++;
+					else
+						val = min;
+					UpdateLcdParam(param, val);
+				break;
+				case keyUp:
+					SavedDlg(0);
+					SetMenu(menu);
+					return;
+				case keyDown:
+				{
+					BOOL res = TRUE;
+					if (val != oldVal)
+						res = SetValue(param, val);
+					SavedDlg(res);
+					SetMenu(menu);
+				}
+				return;
+			}
 		}
+		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
+		return;
 	}
 }
 void fEditPrePressing()
 {
-	wdt_start(wdt_60ms);
-	u8 val = GetValue(paramPrePressing);
-	u8 oldVal = val;
-	if (val > maxPrePressing)
-	{
-		val = minPrePressing;
-		UpdateLcdParam(paramPrePressing, val);
-	}
-	NoteTime();
-	while(1)
-	{
-		if (flags.scanKey)
-		{
-			wdt_feed();
-			switch(get_key())
-			{
-				case keyLeft:
-					if (val <= minPrePressing)
-						val = maxPrePressing;
-					else
-						val--;
-					UpdateLcdParam(paramPrePressing, val);
-				break;
-				case keyRight:
-					if (val >= maxPrePressing)
-						val = minPrePressing;
-					else
-						val++;
-					UpdateLcdParam(paramPrePressing, val);
-				break;
-				case keyUp:
-					SavedDlg(0);
-					SetMenu(&mParamPrePressing);
-				return;
-				case keyDown:
-					if (val != oldVal)
-						SetValue(paramPrePressing, val);
-					SavedDlg(1);
-					SetMenu(&mParamPrePressing);
-				return;
-			}
-		}			
-		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
-			return;
-	}
+	set_edit_sqreen_menu(GetValue(paramPrePressing), paramPrePressing, minPrePressing, maxPrePressing, &mParamPrePressing);
 }
 void fEditPressing()
 {
-	wdt_start(wdt_60ms);
-	u8 val = GetValue(paramPressing);
-	u8 oldVal = val;
-	if (val > maxPressing)
-	{
-		val = minPressing;
-		UpdateLcdParam(paramPressing, val);
-	}
-	NoteTime();
-	while(1)
-	{
-		if (flags.scanKey)
-		{
-			wdt_feed();
-			switch(get_key())
-			{
-				case keyLeft:
-					if (val <= minPressing)
-						val = maxPressing;
-					else
-						val--;
-					UpdateLcdParam(paramPressing, val);
-				break;
-				case keyRight:
-					if (val >= maxPressing)
-						val = minPressing;
-					else
-						val++;
-					UpdateLcdParam(paramPressing, val);
-				break;
-				case keyUp:
-					SavedDlg(0);
-					SetMenu(&mParamPressing);
-				return;
-				case keyDown:
-					if (val != oldVal)
-						SetValue(paramPressing, val);
-					SavedDlg(1);
-					SetMenu(&mParamPressing);
-				return;
-			}
-		}			
-		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
-			return;
-	}
+	set_edit_sqreen_menu(GetValue(paramPressing), paramPressing, minPressing, maxPressing, &mParamPressing);
 }
 void fEditHeating()
 {
-	wdt_start(wdt_60ms);
-	u8 val = GetValue(paramHeating);
-	u8 oldVal = val;
-	if (val > maxHeating)
-	{
-		val = minHeating;
-		UpdateLcdParam(paramHeating, val);
-	}
-	while(1)
-	{
-		if (flags.scanKey)
-		{
-			wdt_feed();
-			switch(get_key())
-			{
-				case keyLeft:
-					if (val <= minHeating)
-						val = maxHeating;
-					else
-						val--;
-					UpdateLcdParam(paramHeating, val);
-				break;
-				case keyRight:
-					if (val >= maxHeating)
-						val = minHeating;
-					else
-						val++;
-					UpdateLcdParam(paramHeating, val);
-				break;
-				case keyUp:
-					SavedDlg(0);
-					SetMenu(&mParamHeating);
-				return;
-				case keyDown:
-					if (val != oldVal)
-						SetValue(paramHeating, val);
-					SavedDlg(1);
-					SetMenu(&mParamHeating);
-				return;
-			}
-		}			
-		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
-			return;
-	}
+	set_edit_sqreen_menu(GetValue(paramHeating), paramHeating, minHeating, maxHeating, &mParamHeating);
 }
 void fEditForging()
 {
-	wdt_start(wdt_60ms);
-	u8 val = GetValue(paramForging);
-	u8 oldVal = val;
-	if (val > maxForging)
-	{
-		val = minForging;
-		UpdateLcdParam(paramForging, val);
-	}
-	while(1)
-	{
-		if (flags.scanKey)
-		{
-			wdt_feed();
-			switch(get_key())
-			{
-				case keyLeft:
-					if (val <= minForging)
-						val = maxForging;
-					else
-						val--;
-					UpdateLcdParam(paramForging, val);
-				break;
-				case keyRight:
-					if (val >= maxForging)
-						val = minForging;
-					else
-						val++;
-					UpdateLcdParam(paramForging, val);
-				break;
-				case keyUp:
-					SavedDlg(0);
-					SetMenu(&mParamForging);
-				return;
-				case keyDown:
-					if (val != oldVal)
-						SetValue(paramForging, val);
-					SavedDlg(1);
-					SetMenu(&mParamForging);
-				return;
-			}
-		}			
-		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
-			return;
-	}
+	set_edit_sqreen_menu(GetValue(paramForging), paramForging, minForging, maxForging, &mParamForging);
 }
 void fEditModulation()
 {
-	wdt_start(wdt_60ms);
-	u8 val = GetValue(paramModulation);
-	u8 oldVal = val;
-	if (val > maxModulation)
-	{
-		val = minModulation;
-		UpdateLcdParam(paramModulation, val);
-	}
-	while(1)
-	{
-		if (flags.scanKey)
-		{
-			wdt_feed();
-			switch(get_key())
-			{
-				case keyLeft:
-					if (val <= minModulation)
-						val = maxModulation;
-					else
-						val--;
-					UpdateLcdParam(paramModulation, val);
-				break;
-				case keyRight:
-					if (val >= maxModulation)
-						val = minModulation;
-					else
-						val++;
-					UpdateLcdParam(paramModulation, val);
-				break;
-				case keyUp:
-					SavedDlg(0);
-					SetMenu(&mParamModulation);
-				return;
-				case keyDown:
-					if (val != oldVal)
-						SetValue(paramModulation, val);
-					SavedDlg(1);
-					SetMenu(&mParamModulation);
-				return;
-			}
-		}
-		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
-			return;
-	}
+	set_edit_sqreen_menu(GetValue(paramModulation), paramModulation, minModulation, maxModulation, &mParamModulation);
 }
 void fEditCurrent()
 {
-	wdt_start(wdt_60ms);
-	u8 val = GetValue(paramCurrent);
-	u8 oldVal = val;
-	if (val > maxCurrent)
-	{
-		val = minCurrent;
-		UpdateLcdParam(paramCurrent, val);
-	}
-	while(1)
-	{
-		if (flags.scanKey)
-		{
-			wdt_feed();
-			switch(get_key())
-			{
-				case keyLeft:
-					if (val <= minCurrent)
-						val = maxCurrent;
-					else
-						val--;
-					UpdateLcdParam(paramCurrent, val);
-				break;
-				case keyRight:
-					if (val >= maxCurrent)
-						val = minCurrent;
-					else
-						val++;
-					UpdateLcdParam(paramCurrent, val);
-				break;
-				case keyUp:
-					SavedDlg(0);
-					SetMenu(&mParamCurrent);
-				return;
-				case keyDown:
-					if (val != oldVal)
-						SetValue(paramCurrent, val);
-					SavedDlg(1);
-					SetMenu(&mParamCurrent);
-				return;
-			}
-		}			
-		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
-			return;
-	}
+	set_edit_sqreen_menu(GetValue(paramCurrent), paramCurrent, minCurrent, maxCurrent, &mParamCurrent);
 }
 
 void fEditStartPrg()
 {
-	wdt_start(wdt_60ms);
-	u8 val = readByteEE((u16)&ee_startprg);
-	u8 oldVal = val;
-	if (val > lastPrg)
-	{
-		val = firstPrg;
-		UpdateLcdParam(cmnprmStartPrg, val);
-	}
-	while(1)
-	{
-		if (flags.scanKey)
-		{
-			wdt_feed();
-			switch(get_key())
-			{
-				case keyLeft:
-					if (val <= firstPrg)
-						val = lastPrg;
-					else
-						val--;
-					UpdateLcdParam(cmnprmStartPrg, val);
-				break;
-				case keyRight:
-					if (val >= lastPrg)
-						val = firstPrg;
-					else
-						val++;
-					UpdateLcdParam(cmnprmStartPrg, val);
-				break;
-				case keyUp:
-					SavedDlg(0);
-					SetMenu(&mCmnPrmStartPrg);
-				return;
-				case keyDown:
-					if (val != oldVal)
-						SetValue(cmnprmStartPrg, val);
-					SavedDlg(1);
-					SetMenu(&mCmnPrmStartPrg);
-				return;
-			}
-		}			
-		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
-			return;
-	}
+	set_edit_sqreen_menu(readByteEE((u16)&ee_startprg), cmnprmStartPrg, firstPrg, lastPrg, &mCmnPrmStartPrg);
 }
 
 void fEditPedalNum()
 {
-	wdt_start(wdt_60ms);
-	u8 val = readByteEE((u16)&ee_pedalnum);
-	u8 oldVal = val;
-	if (val < minPedalNum || val > maxPedalNum)
-	{
-		val = minPedalNum;
-		UpdateLcdParam(cmnprmPedalNum, val);
-	}
-	while(1)
-	{
-		if (flags.scanKey)
-		{
-			wdt_feed();
-			switch(get_key())
-			{
-				case keyLeft:
-					val = minPedalNum;
-					UpdateLcdParam(cmnprmPedalNum, val);
-					break;
-				case keyRight:
-					val = maxPedalNum;
-					UpdateLcdParam(cmnprmPedalNum, val);
-					break;
-				case keyUp:
-					SavedDlg(0);
-					SetMenu(&mCmnPrmPedalNum);
-					return;
-				case keyDown:
-					if (val != oldVal)
-						SetValue(cmnprmPedalNum, val);
-					SavedDlg(1);
-					SetMenu(&mCmnPrmPedalNum);
-				return;
-			}
-		}
-		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
-		return;
-	}
+	set_edit_sqreen_menu(readByteEE((u16)&ee_pedalnum), cmnprmPedalNum, minPedalNum, maxPedalNum, &mCmnPrmPedalNum);
 }
 void fEditBrtns()
 {
-	wdt_start(wdt_60ms);
-	u8 val = readByteEE((u16)&ee_brtns);
-	u8 oldVal = val;
-	if (val != ON && val != OFF)
-	{
-		val = ON;
-		UpdateLcdParam(cmnprmBrtns, val);
-	}
-	while(1)
-	{
-		if (flags.scanKey)
-		{
-			wdt_feed();
-			switch(get_key())
-			{
-				case keyLeft:
-					val = OFF;
-					UpdateLcdParam(cmnprmBrtns, val);
-					switchBrightness(OFF);
-				break;
-				case keyRight:
-					val = ON;
-					UpdateLcdParam(cmnprmBrtns, val);
-					switchBrightness(ON);
-				break;
-				case keyUp:
-					SavedDlg(0);
-					SetMenu(&mCmnPrmBrtns);
-					switchBrightness(oldVal);
-				return;
-				case keyDown:
-					if (val != oldVal)
-					SetValue(cmnprmBrtns, val);
-					SavedDlg(1);
-					SetMenu(&mCmnPrmBrtns);
-				return;
-			}
-		}
-		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
-		return;
-	}
+	set_edit_sqreen_menu(readByteEE((u16)&ee_brtns), cmnprmBrtns, OFF, ON, &mCmnPrmBrtns);
 }
-extern unsigned char m_nModbusId;
 void fEditModbusId()
 {
-	wdt_start(wdt_60ms);
-	u8 val = m_nModbusId;//readByteEE((u16)&ee_modbus_id);
-	while(1)
-	{
-		if (flags.scanKey)
-		{
-			wdt_feed();
-			switch(get_key())
-			{
-				case keyLeft:
-					if (val > MIN_MODBUS_ID)
-						val--;
-					else
-						val = MAX_MODBUS_ID;
-					UpdateLcdParam(cmnprmModbusId, val);
-				break;
-				case keyRight:
-					if (val < MAX_MODBUS_ID)
-						val++;
-					else
-						val = MIN_MODBUS_ID;
-					UpdateLcdParam(cmnprmModbusId, val);
-				break;
-				case keyUp:
-					SavedDlg(0);
-					SetMenu(&mCmnPrmModbusId);
-				return;
-				case keyDown:
-					SavedDlg(SetValue(cmnprmModbusId, val));
-					SetMenu(&mCmnPrmModbusId);
-				return;
-			}
-		}
-		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
-		return;
-	}
+	set_edit_sqreen_menu(readByteEE((u16)&ee_modbus_id), cmnprmModbusId, MIN_MODBUS_ID, MAX_MODBUS_ID, &mCmnPrmModbusId);
 }
 void fEditMode()
 {
-	wdt_start(wdt_60ms);
-	u8 val = readByteEE((u16)&eeMass + curPrg.get() * paramNum + addrMode);
-	u8 oldVal = val;
-	if (val > LAST_MODE)
-	{
-		val = SIMPLE_MODE;
-		UpdateLcdParam(paramMode, val);
-	}
-	while(1)
-	{
-		if (flags.scanKey)
-		{
-			wdt_feed();
-			switch(get_key())
-			{
-				case keyLeft:
-					if (val > FIRST_MODE)
-						val--;
-					UpdateLcdParam(paramMode, val);
-				break;
-				case keyRight:
-					if (val < LAST_MODE)
-						val++;
-					UpdateLcdParam(paramMode, val);
-				break;
-				case keyUp:
-					SavedDlg(0);
-					SetMenu(&mParamMode);
-				return;
-				case keyDown:
-					if (val != oldVal)
-						SetValue(paramMode, val);
-					SavedDlg(1);
-					SetMenu(&mParamMode);
-				return;
-			}
-		}			
-		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
-			return;
-	}
+	set_edit_sqreen_menu(readByteEE((u16)&eeMass + curPrg.get() * paramNum + addrMode),
+		paramMode, SIMPLE_MODE, LAST_MODE, &mParamMode);
 }
 void fEditPause()
 {
-	wdt_start(wdt_60ms);
-	u8 val = readByteEE((u16)&eeMass + curPrg.get() * paramNum + addrPause);
-	u8 oldVal = val;
-	if (val > MAX_PAUSE || val < MIN_PAUSE)
-	{
-		val = MIN_PAUSE;
-		UpdateLcdParam(paramPause, val);
-	}
-	while(1)
-	{
-		if (flags.scanKey)
-		{
-			wdt_feed();
-			switch(get_key())
-			{
-				case keyLeft:
-					if (val <= MIN_PAUSE)
-						val = MAX_PAUSE;
-					else
-						val--;
-					UpdateLcdParam(paramPause, val);
-				break;
-				case keyRight:
-					if (val >= MAX_PAUSE)
-						val = MIN_PAUSE;
-					else
-						val++;
-					UpdateLcdParam(paramPause, val);
-				break;
-				case keyUp:
-					SavedDlg(0);
-					SetMenu(&mParamPause);
-				return;
-				case keyDown:
-					if (val != oldVal)
-						SetValue(paramPause, val);
-					SavedDlg(1);
-					SetMenu(&mParamPause);
-				return;
-			}
-		}			
-		if (CheckUpEditTime(TIME_FOR_SAVE) == TRUE)
-			return;
-	}
+	set_edit_sqreen_menu(readByteEE((u16)&eeMass + curPrg.get() * paramNum + addrPause),
+		paramPause, MIN_PAUSE, MAX_PAUSE, &mParamPause);
 }
 
 BOOL CheckUpEditTime(u32 time)
