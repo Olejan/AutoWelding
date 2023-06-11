@@ -13,7 +13,7 @@
 #define _RUSSIAN_VERSION_	// Русская версия индикатора
 #define WDT_ENABLE			// Включён watchdog timer
 #define LED_COMMON_CATHODE	// Светодиоды подключены с общим катодом
-#define MVL					// Версия распиновки Моя и В.Метелицы
+//#define MVL					// Версия распиновки Моя и В.Метелицы
 #define _CHECK_SI_			// Проверяем СИ на старте
 
 
