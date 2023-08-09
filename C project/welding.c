@@ -522,7 +522,7 @@ u8 TaskWelding()
 			break;
 		case 1:
 			wdt_start(wdt_1s);
-			_delay_ms(10/*500*/);
+			_delay_ms(BEFORE_WELDING_DELAY);
 			wdt_start(wdt_60ms);
 			if (isPedal1Pressed())
 			{

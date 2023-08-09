@@ -57,7 +57,7 @@ const char PROGMEM
 	_Empty[]			= "                ",
 	_ModbusId[]			= "Modbus ID    247",
 #ifndef _RUSSIAN_VERSION_
-	_ViewInfo1[]		= "Ver.  11.06.23T ",
+	_ViewInfo1[]		= "Ver.  09.08.23T ",
 	_InfoAuto[]			= "Auto (Pause    )",
 	_InfoSeam[]			= "Mode is Seam    ",
 	_InfoSimple[]		= "Mode is Simple  ",
@@ -108,9 +108,9 @@ const char PROGMEM
 	_ReleaseIt[]		= "  - release it  ";
 #else
 #ifdef MVL
-	_ViewInfo1[]		= "Версия 11.06.23M",
+	_ViewInfo1[]		= "Версия 09.08.23M",
 #else
-	_ViewInfo1[]		= "Версия 11.06.23T",
+	_ViewInfo1[]		= "Версия 09.08.23T",
 #endif
 	_InfoAuto[]			= "Цикл (Пауза    )",
 	_InfoSeam[]			= "Режим Шовный    ",

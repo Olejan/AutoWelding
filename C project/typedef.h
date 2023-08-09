@@ -244,10 +244,17 @@ enum tagHL
 #define pin_BUTTON_CURRENT	6
 
 /* порт трансформатора */
-#define DDR_TRANS	DDRB
-#define PORT_TRANS	PORTB
-#define PIN_TRANS	PINB
-#define pin_TRANS	0
+#ifdef SEDMAN
+	#define DDR_TRANS	DDRB
+	#define PORT_TRANS	PORTB
+	#define PIN_TRANS	PINB
+	#define pin_TRANS	0
+#else
+	#define DDR_TRANS	DDRA
+	#define PORT_TRANS	PORTA
+	#define PIN_TRANS	PINA
+	#define pin_TRANS	0
+#endif
 
 /*Клапаны*/
 #define DDR_VALVE1	DDRB	/* direct порт клапана предварительного сжатия */
@@ -273,10 +280,17 @@ enum tagHL
 #define pin_CURRENT_HL		0
 
 /* порт входа "Ошибка" */
-#define PORT_ALARM	PORTA
-#define DDR_ALARM	DDRA
-#define PIN_ALARM	PINA
-#define pin_ALARM	0
+#ifdef SEDMAN
+	#define PORT_ALARM	PORTA
+	#define DDR_ALARM	DDRA
+	#define PIN_ALARM	PINA
+	#define pin_ALARM	0
+#else
+	#define PORT_ALARM	PORTB
+	#define DDR_ALARM	DDRB
+	#define PIN_ALARM	PINB
+	#define pin_ALARM	0
+#endif
 
 /* порт регулятора подсветки индикатора */
 #define PORT_IND_BRT	PORTB

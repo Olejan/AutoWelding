@@ -146,17 +146,29 @@ void switchTrans(u8 a_state)
 void switchValve1(u8 state)
 {
 	if (state == ON)
+#ifdef VALVE_ON_IS_LOW
 		PORT_VALVE1 &= ~(1<<pin_VALVE1);
 	else
 		PORT_VALVE1 |= 1<<pin_VALVE1;
+#else
+		PORT_VALVE1 |= 1<<pin_VALVE1;
+	else
+		PORT_VALVE1 &= ~(1<<pin_VALVE1);
+#endif
 	switchHL(pin_PRE_PRESSING_HL, state);
 }
 void switchValve2(u8 state)
 {
 	if (state == ON)
+#ifdef VALVE_ON_IS_LOW
 		PORT_VALVE2 &= ~(1<<pin_VALVE2);
 	else
 		PORT_VALVE2 |= 1<<pin_VALVE2;
+#else
+		PORT_VALVE2 |= 1<<pin_VALVE2;
+	else
+		PORT_VALVE2 &= ~(1<<pin_VALVE2);
+#endif
 	switchHL(pin_PRESSING_HL, state);
 }
 

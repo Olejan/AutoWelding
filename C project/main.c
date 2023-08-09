@@ -395,9 +395,14 @@ void initProc()
 	DDR_TRANS |= 1<<pin_TRANS;
 	PORT_TRANS |= 1<<pin_TRANS;
 	DDR_VALVE1 |= 1<<pin_VALVE1;
-	PORT_VALVE1 |= 1<<pin_VALVE1;
 	DDR_VALVE2 |= 1<<pin_VALVE2;
+#ifdef VALVE_ON_IS_LOW
+	PORT_VALVE1 |= 1<<pin_VALVE1;
 	PORT_VALVE2 |= 1<<pin_VALVE2;
+#else
+	PORT_VALVE1 &= ~(1 << pin_VALVE1);
+	PORT_VALVE2 &= ~(1 << pin_VALVE2);
+#endif
 	DDR_LED = 0xff;
 	PORT_LED = ALL_LEDS_OFF; // выключить все светодиоды
 	// настраиваю порты кнопок на вход
